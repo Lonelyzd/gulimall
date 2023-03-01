@@ -9,11 +9,21 @@ spring:
         server-addr: 192.168.85.1:8848
     gateway:
       routes:
-        - id: baidu_route
-          uri: http://www.baidu.com
+        - id: gulimall-product  #商品服务
+          uri: lb://gulimall-product # 路由给renren-fast，lb代表负载均衡
+          predicates: # 什么情况下路由给它
+            - Path=/api/product/** # 路径匹配规则
+          filters:
+            - RewritePath=/api/(?<segment>.*), /$\{segment} # 过滤器：过滤掉url里的manager,例如http://ip:port/manager/test -> http://ip:port/test
+        - id: third_party_route  #第三方集成服务
+          uri: lb://third-party
           predicates:
-            - Query=url,baidu
-        - id: test_route
-          uri: http://www.qq.com
+            - Path=/api/thirdparty/**
+          filters:
+            - RewritePath=/api/thirdparty/(?<segment>.*), /$\{segment}
+        - id: renren-fast #后台管理服务
+          uri: lb://renren-fast
           predicates:
-            -  Query=url,qq
+            - Path=/api/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /renren-fast/$\{segment}
