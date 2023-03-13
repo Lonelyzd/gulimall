@@ -8,7 +8,6 @@
 
 package com.atguigu.common.xss;
 
-import com.atguigu.common.exception.RRException;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -41,7 +40,7 @@ public class SQLFilter {
         //判断是否包含非法字符
         for(String keyword : keywords){
             if(str.indexOf(keyword) != -1){
-                throw new RRException("包含非法字符");
+                throw new RuntimeException("包含非法字符");
             }
         }
 
