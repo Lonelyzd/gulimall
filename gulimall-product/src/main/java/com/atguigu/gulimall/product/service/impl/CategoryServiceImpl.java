@@ -3,12 +3,18 @@ package com.atguigu.gulimall.product.service.impl;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.gulimall.product.dao.CategoryDao;
+import com.atguigu.gulimall.product.entity.CategoryBrandRelationEntity;
 import com.atguigu.gulimall.product.entity.CategoryEntity;
+import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
 import com.atguigu.gulimall.product.service.CategoryService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,6 +23,8 @@ import java.util.stream.Collectors;
 @Service("categoryService")
 public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity> implements CategoryService {
 
+    @Autowired
+    CategoryBrandRelationService categoryBrandRelationService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -61,6 +69,19 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         findeCatelogPath(catelogPath, catelogId);
         Collections.reverse(catelogPath);
         return catelogPath.toArray(new Long[catelogPath.size()]);
+    }
+
+    @Override
+    @Transactional
+    public void updateDetail(CategoryEntity category) {
+        this.updateById(category);
+        final String name = category.getName();
+        if (StringUtils.isNotEmpty(name)) {
+            //分类名称不为空，则需要同步更新关联表的冗余字段
+            categoryBrandRelationService.update(Wrappers.<CategoryBrandRelationEntity>lambdaUpdate()
+                    .set(CategoryBrandRelationEntity::getCatelogName, name)
+                    .eq(CategoryBrandRelationEntity::getCatelogId, category.getCatId()));
+        }
     }
 
     private void findeCatelogPath(List<Long> catelogPath, Long catelogId) {

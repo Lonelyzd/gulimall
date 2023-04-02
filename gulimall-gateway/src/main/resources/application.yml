@@ -10,9 +10,15 @@ spring:
     gateway:
       routes:
         - id: gulimall-product  #商品服务
-          uri: lb://gulimall-product # 路由给renren-fast，lb代表负载均衡
+          uri: lb://gulimall-product # 路由给gulimall-product，lb代表负载均衡
           predicates: # 什么情况下路由给它
             - Path=/api/product/** # 路径匹配规则
+          filters:
+            - RewritePath=/api/(?<segment>.*), /$\{segment} # 过滤器：过滤掉url里的manager,例如http://ip:port/manager/test -> http://ip:port/test
+        - id: gulimall-member  #会员服务
+          uri: lb://gulimall-member # 路由给gulimall-member，lb代表负载均衡
+          predicates: # 什么情况下路由给它
+            - Path=/api/member/** # 路径匹配规则
           filters:
             - RewritePath=/api/(?<segment>.*), /$\{segment} # 过滤器：过滤掉url里的manager,例如http://ip:port/manager/test -> http://ip:port/test
         - id: third_party_route  #第三方集成服务
@@ -21,6 +27,12 @@ spring:
             - Path=/api/thirdparty/**
           filters:
             - RewritePath=/api/thirdparty/(?<segment>.*), /$\{segment}
+        - id: gulimall-ware  #会员服务
+          uri: lb://gulimall-ware # 路由给gulimall-ware，lb代表负载均衡
+          predicates: # 什么情况下路由给它
+            - Path=/api/ware/** # 路径匹配规则
+          filters:
+            - RewritePath=/api/(?<segment>.*), /$\{segment} # 过滤器：过滤掉url里的manager,例如http://ip:port/manager/test -> http://ip:port/test
         - id: renren-fast #后台管理服务
           uri: lb://renren-fast
           predicates:

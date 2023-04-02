@@ -2,8 +2,10 @@ package com.atguigu.gulimall.product.controller;
 
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.R;
+import com.atguigu.gulimall.product.entity.BrandEntity;
 import com.atguigu.gulimall.product.entity.CategoryBrandRelationEntity;
 import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
+import com.atguigu.gulimall.product.vo.BrandVo;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 /**
@@ -25,6 +28,23 @@ import java.util.Map;
 public class CategoryBrandRelationController {
     @Autowired
     private CategoryBrandRelationService categoryBrandRelationService;
+
+
+    //  /product/categorybrandrelation/brands/list
+    //  获取分类关联的品牌
+    @RequestMapping("/brands/list")
+    public R relationBrandsList(@RequestParam("catId") Long catId) {
+        List<BrandEntity> brandEntityList = categoryBrandRelationService.getBrandByCatId(catId);
+        final List<BrandVo> collect = brandEntityList.stream().map(brand -> {
+            final BrandVo brandVo = new BrandVo();
+            brandVo.setBrandId(brand.getBrandId());
+            brandVo.setBrandName(brand.getName());
+            return brandVo;
+        }).collect(Collectors.toList());
+
+        return R.ok().put("data", collect);
+    }
+
 
     /**
      * 列表
@@ -59,8 +79,7 @@ public class CategoryBrandRelationController {
      */
     @RequestMapping("/save")
     public R save(@RequestBody CategoryBrandRelationEntity categoryBrandRelation) {
-        categoryBrandRelationService.save(categoryBrandRelation);
-
+        categoryBrandRelationService.saveDetail(categoryBrandRelation);
         return R.ok();
     }
 
@@ -69,6 +88,8 @@ public class CategoryBrandRelationController {
      */
     @RequestMapping("/update")
     public R update(@RequestBody CategoryBrandRelationEntity categoryBrandRelation) {
+
+
         categoryBrandRelationService.updateById(categoryBrandRelation);
 
         return R.ok();

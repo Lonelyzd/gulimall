@@ -6,7 +6,14 @@ spring:
     url: jdbc:mysql://192.168.189.128:3306/gulimall_wms?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: root
-
+  application:
+    name: gulimall-ware
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.85.1:8848
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
 # MapperScan
 # sql映射文件位置
 mybatis-plus:
