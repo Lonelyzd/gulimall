@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,7 +104,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
                 //填充分组名称
                 final AttrAttrgroupRelationEntity attrId = attrAttrgroupRelationService.getOne(Wrappers.<AttrAttrgroupRelationEntity>lambdaQuery()
                         .eq(AttrAttrgroupRelationEntity::getAttrId, attr.getAttrId()));
-                if (attrId != null&&attrId.getAttrGroupId()!=null) {
+                if (attrId != null && attrId.getAttrGroupId() != null) {
                     final AttrGroupEntity attrGroupEntity = attrGroupDao.selectById(attrId.getAttrGroupId());
                     attrResponse.setGroupName(attrGroupEntity.getAttrGroupName());
                 }
@@ -218,6 +219,11 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
                 queryWrapper
         );
         return new PageUtils<>(page);
+    }
+
+    @Override
+    public List<Long> selectSearchAttrs(Collection<Long> attrIds) {
+        return this.baseMapper.selectSearchAttrs(attrIds);
     }
 
 }

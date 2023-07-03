@@ -26,11 +26,11 @@ import java.util.Map;
 @RefreshScope
 public class CouponController {
 
-    @Value("${coupon.user.name}")
-    String userName;
-
-    @Value("${coupon.user.age}")
-    String userAge;
+//    @Value("${coupon.user.name}")
+//    String userName;
+//
+//    @Value("${coupon.user.age}")
+//    String userAge;
 
     @Autowired
     private CouponService couponService;
@@ -39,7 +39,8 @@ public class CouponController {
     @RequestMapping("/test")
     public R test() {
         // 获取Nacos配置中心的配置
-        return R.ok().put("userName",userName).put("userAge",userAge);
+//        return R.ok().put("userName",userName).put("userAge",userAge);
+        return null;
     }
 
     /** 测试接口

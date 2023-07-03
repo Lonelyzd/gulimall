@@ -1,13 +1,13 @@
 server:
   port: 7000
-  spring:
-    application:
-      name: gulimall-coupon
-    datasource:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://192.168.189.128:3306/gulimall_sms?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
-      username: root
-      password: root
+spring:
+  application:
+    name: gulimall-coupon
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.189.128:3306/gulimall_sms?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
   cloud:
     nacos:
       discovery:

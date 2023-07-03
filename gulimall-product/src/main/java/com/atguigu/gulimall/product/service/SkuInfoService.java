@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.gulimall.product.entity.SkuInfoEntity;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,5 +21,14 @@ public interface SkuInfoService extends IService<SkuInfoEntity> {
     void saveSkuInfo(SkuInfoEntity skuInfoEntity);
 
     PageUtils queryPageCondition(Map<String, Object> params);
+
+    /** 根据spuId获取对应的所有SKU信息
+     * @Author: z_dd
+     * @Date: 2023/4/15 21:56
+     * @param spuId:
+     * @return: java.util.List<com.atguigu.gulimall.product.entity.SkuInfoEntity>
+     * @Description:
+     **/
+    List<SkuInfoEntity> getSkusBySpuId(Long spuId);
 }
 

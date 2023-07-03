@@ -1,5 +1,6 @@
 package com.atguigu.gulimall.ware.service.impl;
 
+import com.atguigu.common.to.SkuHasStockVo;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.common.utils.R;
@@ -14,7 +15,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Service("wareSkuService")
@@ -63,6 +66,22 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuDao, WareSkuEntity> i
         wareSku.setStock(wareSku.getStock() + skuNum);
 
         this.saveOrUpdate(wareSku);
+    }
+
+    @Override
+    public List<SkuHasStockVo> getSkusHasStock(List<Long> skuIds) {
+        final List<SkuHasStockVo> collect = skuIds
+                .stream()
+                .map(skuId -> {
+                    SkuHasStockVo vo = new SkuHasStockVo();
+                    Long count = this.baseMapper.getSkuStock(skuId);
+                    vo.setSkuId(skuId);
+                    vo.setHasStock(count != null && count > 0);
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
+        return collect;
     }
 
 }

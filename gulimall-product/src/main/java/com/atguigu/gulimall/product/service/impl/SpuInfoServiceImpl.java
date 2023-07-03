@@ -1,13 +1,19 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import com.alibaba.fastjson.TypeReference;
+import com.atguigu.common.constant.ProductConstant;
+import com.atguigu.common.to.SkuHasStockVo;
 import com.atguigu.common.to.SkuReductionTo;
 import com.atguigu.common.to.SpuBoundTo;
+import com.atguigu.common.to.es.SkuEsModel;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.product.dao.SpuInfoDao;
 import com.atguigu.gulimall.product.entity.*;
 import com.atguigu.gulimall.product.feign.CouponFeignService;
+import com.atguigu.gulimall.product.feign.SearchFeignService;
+import com.atguigu.gulimall.product.feign.WareFeignService;
 import com.atguigu.gulimall.product.service.*;
 import com.atguigu.gulimall.product.vo.*;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -24,9 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -56,6 +60,18 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
     @Autowired
     CouponFeignService couponFeignService;
+
+    @Autowired
+    WareFeignService wareFeignService;
+
+    @Autowired
+    SearchFeignService searchFeignService;
+
+    @Autowired
+    BrandService brandService;
+
+    @Autowired
+    CategoryService categoryService;
 
 
     @Override
@@ -194,7 +210,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
         final LambdaQueryWrapper<SpuInfoEntity> wrapper = Wrappers.<SpuInfoEntity>lambdaQuery()
                 .eq(StringUtils.isNotBlank(catelogId) && !"0".equals(catelogId), SpuInfoEntity::getCatalogId, catelogId)
                 .eq(StringUtils.isNotBlank(brandId) && !"0".equals(brandId), SpuInfoEntity::getBrandId, brandId)
-                .eq(StringUtils.isNotBlank(status) , SpuInfoEntity::getPublishStatus, status)
+                .eq(StringUtils.isNotBlank(status), SpuInfoEntity::getPublishStatus, status)
                 .and(StringUtils.isNotBlank(key), ew -> ew.eq(SpuInfoEntity::getSpuName, key).or().like(SpuInfoEntity::getSpuName, key));
 
         IPage<SpuInfoEntity> page = this.page(
@@ -203,6 +219,123 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
         );
 
         return new PageUtils(page);
+    }
+
+    @Override
+    public void up(Long spuId) {
+        //1.查出当前spuId对应的所有SKU信息
+        List<SkuInfoEntity> skuInfoList = skuInfoService.getSkusBySpuId(spuId);
+        final List<Long> skuIdList = skuInfoList.stream().map(SkuInfoEntity::getSkuId).collect(Collectors.toList());
+
+        //TODO attrs：4.检查当前SKU的所有可被用来检索的规格属性
+        final List<ProductAttrValueEntity> baseAttrs = productAttrValueService.baseAttrListForSpu(spuId);
+        final Set<Long> attrIds = baseAttrs.stream().map(ProductAttrValueEntity::getAttrId).collect(Collectors.toSet());
+
+        List<Long> searchAttrIds = attrService.selectSearchAttrs(attrIds);
+
+        Set<Long> idSet = new HashSet<>(searchAttrIds);
+        final List<SkuEsModel.Attrs> skuEAttrs = baseAttrs
+                .stream()
+                .filter(item -> idSet.contains(item.getAttrId()))
+                .map(item -> {
+                    SkuEsModel.Attrs attrs = new SkuEsModel.Attrs();
+                    BeanUtils.copyProperties(item, attrs);
+                    return attrs;
+                })
+                .collect(Collectors.toList());
+
+        Map<Long, Boolean> stockMap = null;
+
+        try {
+            // hasStock：1.发送远程调用，查询库存系统是否有库存
+            final R skusHasStock = wareFeignService.getSkusHasStock(skuIdList);
+            stockMap = skusHasStock.getData(new TypeReference<List<SkuHasStockVo>>() {
+            }).stream().collect(Collectors.toMap(SkuHasStockVo::getSkuId, SkuHasStockVo::getHasStock));
+            System.out.println(stockMap);
+        } catch (Exception e) {
+            log.error("库存服务查询异常!", e);
+        }
+
+
+        //2.封装每个SKU信息
+        Map<Long, Boolean> finalStockMap = stockMap;
+        final List<SkuEsModel> upProducts = skuInfoList
+                .stream()
+                .map(skuInfo -> {
+                    //组装需要的数据
+                    SkuEsModel esModel = new SkuEsModel();
+                    BeanUtils.copyProperties(skuInfo, esModel);
+
+                    //skuPrice，skuImg，
+                    esModel.setSkuPrice(skuInfo.getPrice());
+                    esModel.setSkuImg(skuInfo.getSkuDefaultImg());
+
+                    // hasStock：1.发送远程调用，查询库存系统是否有库存
+                    if (finalStockMap == null) {
+                        esModel.setHasStock(true);
+                    } else {
+                        esModel.setHasStock(finalStockMap.get(skuInfo.getSkuId()));
+                    }
+
+                    // hotScore 2.热度评分先给默认0
+
+
+                    // 3.查询品牌和分类的名字信息
+                    //应该也可以提取查询
+                    final BrandEntity brand = brandService.getById(esModel.getBrandId());
+                    esModel.setBrandName(brand.getName());
+                    esModel.setBrandImg(brand.getLogo());
+
+                    final CategoryEntity category = categoryService.getById(esModel.getCatalogId());
+                    esModel.setCatalogName(category.getName());
+
+                    //设置检索属性
+                    esModel.setAttrs(skuEAttrs);
+                    return esModel;
+                }).collect(Collectors.toList());
+
+        //TODO 5.发给ES进行保存
+        R r = searchFeignService.productStatusUp(upProducts);
+        if (r.getCode().equals(0)) {
+            //远程调用成功
+            //TODO 6.修改SPU上架状态
+            this.baseMapper.updateSpuStatus(spuId, ProductConstant.SuatusEnum.SPU_UP.getCode());
+        } else {
+            //远程调用失败
+            //TODO 7.重复调用；接口幂等性
+            //Feign调用流程
+            /**
+             *  1.构造请求，将对象转为JSON
+             *   RequestTemplate template= buildTemplateFromArgs.create(args);
+             *  2.发送请求进行执行
+             *      executeAndDecode(template)
+             *  3.执行请求会有重试机制 默认关闭
+             *  while(true) {
+             *             try {
+             *                 return this.executeAndDecode(template);
+             *             } catch (RetryableException var8) {
+             *                 RetryableException e = var8;
+             *
+             *                 try {
+             *                     retryer.continueOrPropagate(e);
+             *                 } catch (RetryableException var7) {
+             *                     Throwable cause = var7.getCause();
+             *                     if (this.propagationPolicy == ExceptionPropagationPolicy.UNWRAP && cause != null) {
+             *                         throw cause;
+             *                     }
+             *
+             *                     throw var7;
+             *                 }
+             *
+             *                 if (this.logLevel != Level.NONE) {
+             *                     this.logger.logRetry(this.metadata.configKey(), this.logLevel);
+             *                 }
+             *             }
+             *         }
+             *
+             **/
+        }
+
     }
 
 }

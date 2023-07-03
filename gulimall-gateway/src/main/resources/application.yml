@@ -12,7 +12,7 @@ spring:
         - id: gulimall-product  #商品服务
           uri: lb://gulimall-product # 路由给gulimall-product，lb代表负载均衡
           predicates: # 什么情况下路由给它
-            - Path=/api/product/** # 路径匹配规则
+            - Path=/api/product/**,/hello # 路径匹配规则
           filters:
             - RewritePath=/api/(?<segment>.*), /$\{segment} # 过滤器：过滤掉url里的manager,例如http://ip:port/manager/test -> http://ip:port/test
         - id: gulimall-member  #会员服务
@@ -39,3 +39,11 @@ spring:
             - Path=/api/**
           filters:
             - RewritePath=/api/(?<segment>.*), /renren-fast/$\{segment}
+        - id: mall_host_toute
+          uri: lb://gulimall-product #目标服务
+          predicates:
+            - Host=gulimall.com #监听的域名
+        - id: mall_search_toute
+          uri: lb://gulimall-search #目标服务
+          predicates:
+            - Host=search.gulimall.com #监听的域名

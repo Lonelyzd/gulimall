@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
 
@@ -68,6 +69,13 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoDao, SkuInfoEntity> i
             throw new RuntimeException(e);
         }
 
+    }
+
+    @Override
+    public List<SkuInfoEntity> getSkusBySpuId(Long spuId) {
+        return this.list(Wrappers.<SkuInfoEntity>lambdaQuery()
+                .eq(SkuInfoEntity::getSpuId,spuId)
+        );
     }
 
 }

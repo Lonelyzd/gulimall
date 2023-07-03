@@ -1,5 +1,5 @@
 server:
-  port: 11000
+  port: 10000
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -14,6 +14,11 @@ spring:
     name: gulimall-product
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
+  thymeleaf:
+    cache: true
+  redis:
+    host: 192.168.189.128
+    port: 6379
 # MapperScan
 # sql映射文件位置
 mybatis-plus:
@@ -21,5 +26,8 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto   #主键自增
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#  configuration:
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+logging:
+  level:
+    com.atguigu.gulimall: error

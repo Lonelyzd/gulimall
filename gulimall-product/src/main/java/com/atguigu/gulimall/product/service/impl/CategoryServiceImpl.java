@@ -7,14 +7,17 @@ import com.atguigu.gulimall.product.entity.CategoryBrandRelationEntity;
 import com.atguigu.gulimall.product.entity.CategoryEntity;
 import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
 import com.atguigu.gulimall.product.service.CategoryService;
+import com.atguigu.gulimall.product.vo.Catelog2Vo;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -82,6 +85,52 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
                     .set(CategoryBrandRelationEntity::getCatelogName, name)
                     .eq(CategoryBrandRelationEntity::getCatelogId, category.getCatId()));
         }
+    }
+
+    @Override
+    @Cacheable(value = {"category"}, key = "#root.method.name", sync = true)
+    public List<CategoryEntity> getLevel1Categorys() {
+        return this.baseMapper.selectList(Wrappers.<CategoryEntity>lambdaQuery()
+                .eq(CategoryEntity::getParentCid, 0));
+    }
+
+    @Override
+    @Cacheable(value = {"category"}, key = "#root.methodName", sync = true)
+    public Map<String, List<Catelog2Vo>> getCatalogJson() {
+        final List<CategoryEntity> categoryAllList = this.baseMapper.selectList(null);
+
+        final List<CategoryEntity> level1Categorys = getParent_cid(categoryAllList, 0L);
+
+        final Map<String, List<Catelog2Vo>> collect = level1Categorys.stream().collect(Collectors.toMap(k -> k.getCatId().toString(), v -> {
+            final List<CategoryEntity> categoryEntities = getParent_cid(categoryAllList, v.getCatId());
+            //封装二级分类
+            List<Catelog2Vo> catelog2VoList = null;
+            if (!CollectionUtils.isEmpty(categoryEntities)) {
+                catelog2VoList = categoryEntities.stream().map(lv2 -> {
+                    final Catelog2Vo catelog2Vo = new Catelog2Vo(v.getCatId().toString(), lv2.getCatId().toString(), lv2.getName(), null);
+                    //封装三级分类
+                    final List<CategoryEntity> categoryEntities1 = getParent_cid(categoryAllList, lv2.getCatId());
+                    if (!CollectionUtils.isEmpty(categoryEntities1)) {
+                        final List<Catelog2Vo.Catelog3Vo> collect1 = categoryEntities1.stream().map(lv3 -> {
+                            Catelog2Vo.Catelog3Vo catelog3Vo = new Catelog2Vo.Catelog3Vo(lv2.getCatId().toString(), lv3.getCatId().toString(), lv3.getName());
+                            return catelog3Vo;
+                        }).collect(Collectors.toList());
+                        catelog2Vo.setCatalog3List(collect1);
+
+                    }
+                    return catelog2Vo;
+                }).collect(Collectors.toList());
+            }
+            return catelog2VoList;
+        }));
+
+        return collect;
+    }
+
+    private List<CategoryEntity> getParent_cid(List<CategoryEntity> categoryAllList, Long parentCid) {
+        return categoryAllList.stream()
+                .filter(category -> category.getParentCid().equals(parentCid))
+                .collect(Collectors.toList());
     }
 
     private void findeCatelogPath(List<Long> catelogPath, Long catelogId) {
