@@ -1,7 +1,11 @@
 package com.atguigu.gulimall.product;
 
+import com.atguigu.gulimall.product.dao.AttrGroupDao;
+import com.atguigu.gulimall.product.dao.SkuSaleAttrValueDao;
 import com.atguigu.gulimall.product.entity.BrandEntity;
 import com.atguigu.gulimall.product.service.BrandService;
+import com.atguigu.gulimall.product.vo.SkuItemSaleAttrVo;
+import com.atguigu.gulimall.product.vo.SpuItemGroupAttrVo;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
@@ -22,6 +27,12 @@ public class GulimallProductApplicationTests {
 
     @Autowired
     RedissonClient redisson;
+
+    @Autowired
+    private AttrGroupDao attrGroupDao;
+
+    @Autowired
+    private SkuSaleAttrValueDao skuSaleAttrValueDao;
 
     @Test
     public void contextLoads() {
@@ -58,5 +69,13 @@ public class GulimallProductApplicationTests {
             System.out.println("释放锁..." + Thread.currentThread().getId());
             myLock.unlock();
         }
+    }
+
+    @Test
+    public void attrGroupDaoTets(){
+        final List<SpuItemGroupAttrVo> attrGroupWithAttrsBySpuId = attrGroupDao.getAttrGroupWithAttrsBySpuId(13L,225L);
+
+        final List<SkuItemSaleAttrVo> saleAttrsBySpuId = skuSaleAttrValueDao.getSaleAttrsBySpuId(20L);
+        System.out.println(attrGroupWithAttrsBySpuId);
     }
 }

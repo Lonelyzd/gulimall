@@ -1,7 +1,7 @@
 package com.atguigu.gulimall.product.service;
 
 import com.atguigu.gulimall.product.vo.AttrGroupRelationVo;
-import com.atguigu.gulimall.product.vo.AttrResponse;
+import com.atguigu.gulimall.product.vo.AttrRespVo;
 import com.atguigu.gulimall.product.vo.AttrVo;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.atguigu.common.utils.PageUtils;
@@ -10,7 +10,6 @@ import com.atguigu.gulimall.product.entity.AttrEntity;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * 商品属性
@@ -27,7 +26,7 @@ public interface AttrService extends IService<AttrEntity> {
 
     PageUtils queryBaseAttrPage(Map<String, Object> param, Long catelogId,String attrType);
 
-    AttrResponse getAttrInfo(Long attrId);
+    AttrRespVo getAttrInfo(Long attrId);
 
     void updateAttr(AttrVo attr);
 

@@ -8,7 +8,7 @@ import lombok.Data;
  * @Description:
  */
 @Data
-public class AttrResponse extends AttrVo {
+public class AttrRespVo extends AttrVo {
     private String catelogName;
 
     private String groupName;

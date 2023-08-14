@@ -5,7 +5,7 @@ import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.product.entity.ProductAttrValueEntity;
 import com.atguigu.gulimall.product.service.AttrService;
 import com.atguigu.gulimall.product.service.ProductAttrValueService;
-import com.atguigu.gulimall.product.vo.AttrResponse;
+import com.atguigu.gulimall.product.vo.AttrRespVo;
 import com.atguigu.gulimall.product.vo.AttrVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -63,7 +63,7 @@ public class AttrController {
     @RequestMapping("/info/{attrId}")
     public R info(@PathVariable("attrId") Long attrId) {
 //        AttrEntity attr = attrService.getById(attrId);
-        AttrResponse response = attrService.getAttrInfo(attrId);
+        AttrRespVo response = attrService.getAttrInfo(attrId);
 
         return R.ok().put("attr", response);
     }

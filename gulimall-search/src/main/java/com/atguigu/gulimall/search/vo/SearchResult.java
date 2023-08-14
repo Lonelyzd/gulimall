@@ -5,7 +5,9 @@ import lombok.Data;
 
 import java.util.List;
 
-/** 检索结果VO
+/**
+ * 检索结果VO
+ *
  * @author: z_dd
  * @date: 2023/6/14 21:09
  * @Description:
@@ -29,15 +31,19 @@ public class SearchResult {
     private List<CatalogVo> catalogs; //当前查询到到结果涉及到的所有分类
 
     private List<Integer> pageNavs;
+
+    private List<NavVo> navs;   //面包屑导航数据
+
+
     @Data
-    public static class BrandVo{
+    public static class BrandVo {
         private Long brandId;
         private String brandName;
         private String brandImg;
     }
 
     @Data
-    public static class AttrVo{
+    public static class AttrVo {
         private Long attrId;
 
         private String attrName;
@@ -46,9 +52,16 @@ public class SearchResult {
     }
 
     @Data
-    public static class CatalogVo{
+    public static class CatalogVo {
         private Long catalogId;
         private String catalogName;
+    }
+
+    @Data
+    public static class NavVo {
+        private String navName;
+        private String navValue;
+        private String link;
     }
 
 }

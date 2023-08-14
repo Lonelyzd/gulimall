@@ -3,7 +3,6 @@ package com.atguigu.gulimall.product.service.impl;
 import com.atguigu.common.constant.ProductConstant;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
-import com.atguigu.gulimall.product.dao.AttrAttrgroupRelationDao;
 import com.atguigu.gulimall.product.dao.AttrDao;
 import com.atguigu.gulimall.product.dao.AttrGroupDao;
 import com.atguigu.gulimall.product.dao.CategoryDao;
@@ -15,7 +14,7 @@ import com.atguigu.gulimall.product.service.AttrAttrgroupRelationService;
 import com.atguigu.gulimall.product.service.AttrService;
 import com.atguigu.gulimall.product.service.CategoryService;
 import com.atguigu.gulimall.product.vo.AttrGroupRelationVo;
-import com.atguigu.gulimall.product.vo.AttrResponse;
+import com.atguigu.gulimall.product.vo.AttrRespVo;
 import com.atguigu.gulimall.product.vo.AttrVo;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -95,8 +94,8 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
 
         final PageUtils pageUtils = new PageUtils(page);
         final List<AttrEntity> list = pageUtils.getList();
-        final List<AttrResponse> res = list.stream().map((attr) -> {
-            final AttrResponse attrResponse = new AttrResponse();
+        final List<AttrRespVo> res = list.stream().map((attr) -> {
+            final AttrRespVo attrResponse = new AttrRespVo();
             BeanUtils.copyProperties(attr, attrResponse);
 
 
@@ -123,9 +122,9 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
     }
 
     @Override
-    public AttrResponse getAttrInfo(Long attrId) {
+    public AttrRespVo getAttrInfo(Long attrId) {
         final AttrEntity attr = this.baseMapper.selectById(attrId);
-        AttrResponse response = new AttrResponse();
+        AttrRespVo response = new AttrRespVo();
         BeanUtils.copyProperties(attr, response);
         //设置分类路径
         final Long[] catelogPath = categoryService.findCatelogPath(attr.getCatelogId());

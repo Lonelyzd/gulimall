@@ -402,8 +402,8 @@
         <a href="http://gulimall.com/"><img src="/static/search/./image/logo1.jpg" alt=""></a>
     </div>
     <div class="header_form">
-        <input type="text" placeholder="手机"/>
-        <a href="/static/search/#">搜索</a>
+        <input id="keyword_input" type="text" th:value="${param.keyword}" placeholder="手机"/>
+        <a href="javascript:searchByKeyword()">搜索</a>
     </div>
     <div class="header_ico">
         <div class="header_gw">
@@ -772,6 +772,11 @@
                 <a href="/static/search/#">游戏手机</a>
             </div>
         </div>
+        <div class="JD_ipone_one c">
+            <a th:href="${nav.getLink()}" class="qqq" th:each="nav:${result.navs}">
+                <span th:text="${nav.navName}"></span>:<span th:text="${nav.navValue}"></span>x
+            </a>
+        </div>
         <i><img src="/static/search/image/right-@1x.png" alt=""></i>
     </div>
 </div>
@@ -795,10 +800,10 @@
                         <div class="sl_value_logo">
                             <ul>
                                 <li th:each="brand:${result.getBrands()}">
-                                    <a href="/static/search/#">
+                                    <a href="/static/search/#"
+                                       th:href="${'javascript:searchProducts(&quot;brandId&quot;,'+brand.brandId+')'}">
                                         <img th:src="${brand.brandImg}" alt="">
                                         <div th:text="${brand.brandName}">
-                                            华为(HUAWEI)
                                         </div>
                                     </a>
                                 </li>
@@ -826,7 +831,8 @@
                     <div class="sl_value">
                         <ul>
                             <li th:each="catalog:${result.getCatalogs()}">
-                                <a href="/static/search/#" th:text="${catalog.catalogName}"></a>
+                                <a href="/static/search/#" th:text="${catalog.catalogName}"
+                                   th:href="${'javascript:searchProducts(&quot;catalog&quot;,'+catalog.catalogId+')'}"></a>
                             </li>
                         </ul>
                     </div>
@@ -844,13 +850,16 @@
                     </div>
                 </div>
                 <!--属性-->
-                <div class="JD_pre"  th:each="attr:${result.attrs}">
+                <div class="JD_pre" th:each="attr:${result.attrs}">
                     <div class="sl_key">
                         <span th:text="${attr.attrName}">价格：</span>
                     </div>
                     <div class="sl_value">
                         <ul>
-                            <li th:each="val:${attr.attrValue}"><a href="/static/search/#" th:text="${val}">0-499</a></li>
+                            <li th:each="val:${attr.attrValue}">
+                                <a href="/static/search/#" th:text="${val}"
+                                   th:href="${'javascript:searchProducts(&quot;attrs&quot;,&quot'+attr.attrId+'_'+val+'&quot)'}">0-499</a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -1172,12 +1181,34 @@
                 <div class="filter">
                     <!--综合排序-->
                     <div class="filter_top">
-                        <div class="filter_top_left">
-                            <a href="/static/search/#">综合排序</a>
-                            <a href="/static/search/#">销量</a>
-                            <a href="/static/search/#">价格</a>
-                            <a href="/static/search/#">评论分</a>
-                            <a href="/static/search/#">上架时间</a>
+                        <div class="filter_top_left" th:with="p=${param.sort},priceRange=${param.skuPrice}">
+                            <a class="sort_a" sort="hotScore"
+                               th:class="${ (#strings.isEmpty(p) || #strings.startsWith(p,'hotScore')&& #strings.endsWith(p,'desc') ) ?'sort_a desc':'sort_a'}"
+                               th:style="${(#strings.isEmpty(p) || #strings.startsWith(p,'hotScore'))? 'color: #FFF; border-color:#e4393c;background:#e4393c':'color: #333; border-color: #CCC; background: #FFF'}">
+                                综合排序[[${ (#strings.isEmpty(p) || #strings.startsWith(p,'hotScore')&&
+                                #strings.endsWith(p,'desc')) ?'↓':'↑'}]]
+                            </a>
+                            <a class="sort_a" sort="saleCount"
+                               th:class="${((!#strings.isEmpty(p) && #strings.startsWith(p,'saleCount'))&& #strings.endsWith(p,'desc') ) ?'sort_a desc':'sort_a'}"
+                               th:style="${(!#strings.isEmpty(p) && #strings.startsWith(p,'saleCount'))? 'color: #FFF; border-color:#e4393c;background:#e4393c':'color: #333; border-color: #CCC; background: #FFF'}">
+                                销量[[${((!#strings.isEmpty(p) && #strings.startsWith(p,'saleCount'))&&
+                                #strings.endsWith(p,'desc')) ?'↓':'↑'}]]
+                            </a>
+                            <a class="sort_a" sort="skuPrice"
+                               th:class="${((!#strings.isEmpty(p) && #strings.startsWith(p,'skuPrice'))&& #strings.endsWith(p,'desc') ) ?'sort_a desc':'sort_a'}"
+                               th:style="${(!#strings.isEmpty(p) && #strings.startsWith(p,'skuPrice'))? 'color: #FFF; border-color:#e4393c;background:#e4393c':'color: #333; border-color: #CCC; background: #FFF'}">
+                                价格[[${((!#strings.isEmpty(p) && #strings.startsWith(p,'skuPrice'))&&
+                                #strings.endsWith(p,'desc') ) ?'↓':'↑'}]]
+                            </a>
+                            <a class="sort_a">评论分</a>
+                            <a class="sort_a">上架时间</a>
+
+                            <input type="number" id="skuPriceFrom" style="width: 100px;margin-left: 30px"
+                                   th:value="${#strings.isEmpty(priceRange)?_:#strings.substringBefore(priceRange,'_')}">
+                            -
+                            <input type="number" id="skuPriceTo" style="width: 100px"
+                                   th:value="${#strings.isEmpty(priceRange)?_:#strings.substringAfter(priceRange,'_')}">
+                            <button id="skuPriceSearchBtm">确定</button>
                         </div>
                         <div class="filter_top_right">
                             <span class="fp-text">
@@ -1288,9 +1319,9 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/static/search/#">
-                                        <i></i>
-                                        仅显示有货
+                                    <a href="/static/search/#" th:with="hasStock=${param.hasStock}">
+                                        <input id="showHasStock" type="checkbox" th:checked="${#strings.equals('1',hasStock)}"/><label
+                                            for="showHasStock">仅显示有货[[${hasStock}]]</label>
                                     </a>
                                 </li>
                                 <li>
@@ -1311,7 +1342,7 @@
                                 <a href="/static/search/#">关注</a>
                             </div>
                             <p class="da">
-                                <a href="/static/search/#">
+                                <a th:href="|http://item.gulimall.com/${product.skuId}.html|">
                                     <img th:src="${product.skuImg}" class="dim">
                                 </a>
                             </p>
@@ -1353,16 +1384,15 @@
                     <div class="filter_page">
                         <div class="page_wrap">
                             <span class="page_span1">
-                                <a href="/static/search/#">
+                                <a class="page_a" th:attr="pn=${result.pageNum - 1}">
                                     < 上一页
                                 </a>
-                                <a href="/static/search/#" style="border: 0;color:#ee2222;background: #fff">1</a>
-                                <a href="/static/search/#">2</a>
-                                <a href="/static/search/#">3</a>
-                                <a href="/static/search/#"
-                                   style="border: 0;font-size: 20px;color: #999;background: #fff">...</a>
-                                <a href="/static/search/#">169</a>
-                                <a href="/static/search/#">
+                                <a class="page_a" th:each="pageNum:${result.pageNavs}" th:attr="pn=${pageNum}"
+                                   th:style="${pageNum==result.pageNum?'border: 0;color:#ee2222;background: #fff':_}">
+                                    [[${pageNum}]]
+                                </a>
+                                <a class="page_a" th:if="${result.pageNum<result.totalPages}"
+                                   th:attr="pn=${result.pageNum + 1}">
                                     下一页 >
                                 </a>
                             </span>
@@ -1370,7 +1400,7 @@
                                 <em>共<b>169</b>页&nbsp;&nbsp;到第</em>
                                 <input type="number" value="1">
                                 <em>页</em>
-                                <a href="/static/search/#">确定</a>
+                                <a class="page_a">确定</a>
                             </span>
                         </div>
                     </div>
@@ -2147,6 +2177,95 @@
     }, function () {
         $(this).css("color", "#727272")
     })
+
+    function searchProducts(key, val) {
+        let href = location.href;
+        url = replaceParamVal(href, key, val,true)
+        location.href = url
+    }
+
+    function searchByKeyword() {
+        let val = $("#keyword_input").val();
+        searchProducts('keyword', val)
+    }
+
+    $(".page_a").click(function () {
+        let pn = $(this).attr("pn");
+
+        let href = location.href;
+
+        location.href = replaceParamVal(href, "pageNum", pn)
+    })
+
+    function changeStyle() {
+        //调整样式
+        $(".sort_a").css({"color": "#333", "border-color": "#CCC", "background": "#FFF"});
+        $(this).css({"color": "#FFF", "border-color": "#e4393c", "background": "#e4393c"})
+
+        $(".sort_a").each(function () {
+            let text = $(this).text().replace("↑", "").replace("↓", "");
+            $(this).text(text)
+        })
+
+        //改变升降序
+        $(this).toggleClass("desc")
+        let text = $(this).text().replace("↑", "").replace("↓", "");
+        if ($(this).hasClass("desc")) {
+            $(this).text(text + "↓")
+        } else {
+            $(this).text(text + "↑")
+        }
+    }
+
+    //升降序查询
+    $(".sort_a").click(function () {
+        //改变当前元素样式以及兄弟元素样式
+        changeStyle.call(this);
+
+        let attrVal = null;
+        if ($(this).hasClass("desc")) {
+            attrVal = `${$(this).attr("sort")}_desc`;
+        } else {
+            attrVal = `${$(this).attr("sort")}_asc`;
+        }
+        let href = location.href
+        location.href = replaceParamVal(href, "sort", attrVal)
+        return false;
+    })
+
+    //价格区间查询
+    $("#skuPriceSearchBtm").click(function () {
+        let from = $("#skuPriceFrom").val();
+        let to = $("#skuPriceTo").val();
+        location.href = replaceParamVal(location.href, "skuPrice", `${from}_${to}`)
+    })
+    //仅显示有货查询
+    $("#showHasStock").change(function () {
+        let prop = $(this).prop("checked");
+        if (prop) {
+            location.href = replaceParamVal(location.href, "hasStock", 1)
+        }else {
+            let re= eval(`/&?(hasStock=)([^&]*)/gi`);
+            location.href =(location.href+"").replace(re,"")
+        }
+        return false;
+    });
+
+    function replaceParamVal(url, paramName, replaceVal,forceAdd) {
+        if (url.indexOf(paramName) !== -1 &&!forceAdd) {
+            let oUrl = url.toString();
+            let re = eval(`/(${paramName}=)([^&]*)/gi`);
+            return oUrl.replace(re, paramName + '=' + replaceVal);
+        } else {
+            if (url.indexOf('?') !== -1) {
+                return url + `&${paramName}=${replaceVal}`
+            } else {
+                return url + `?${paramName}=${replaceVal}`
+            }
+        }
+    }
+
+
 </script>
 </body>
 </html>

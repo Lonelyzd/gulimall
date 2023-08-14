@@ -1,12 +1,17 @@
 package com.atguigu.gulimall.search.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.atguigu.common.to.es.SkuEsModel;
+import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.search.config.GuliMallElasticSearchConfig;
 import com.atguigu.gulimall.search.constant.EsConstant;
+import com.atguigu.gulimall.search.feign.ProductFeignService;
 import com.atguigu.gulimall.search.service.MallSearchService;
+import com.atguigu.gulimall.search.vo.AttrResponseVo;
 import com.atguigu.gulimall.search.vo.SearchParam;
 import com.atguigu.gulimall.search.vo.SearchResult;
+import org.apache.catalina.util.URLEncoder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.search.SearchRequest;
@@ -32,6 +37,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,6 +54,9 @@ public class MallSearchServiceImpl implements MallSearchService {
 
     @Autowired
     RestHighLevelClient client;
+
+    @Autowired
+    ProductFeignService productFeignService;
 
 
     /**
@@ -128,7 +137,7 @@ public class MallSearchServiceImpl implements MallSearchService {
             }
         }
         // 1.5 bool - filter -term 按照库存是否存在
-        if(param.getHasStock()!=null) {
+        if (param.getHasStock() != null) {
             boolQuery.filter(QueryBuilders.termsQuery("hasStock", Objects.equals(param.getHasStock(), 1)));
         }
         // 1.6 bool - filter -range 按照价格区间:1_500;  1_;  _500
@@ -321,10 +330,36 @@ public class MallSearchServiceImpl implements MallSearchService {
         result.setTotalPages(totalPages);
 
         List<Integer> pageNavs = new ArrayList<>();
-        for(int i = 1; i <= totalPages; i++) {
+        for (int i = 1; i <= totalPages; i++) {
             pageNavs.add(i);
         }
         result.setPageNavs(pageNavs);
+        final List<String> attrs = param.getAttrs();
+        if (!CollectionUtils.isEmpty(attrs)) {
+            final List<SearchResult.NavVo> collect = attrs.stream()
+                    .map(item -> {
+                        SearchResult.NavVo vo = new SearchResult.NavVo();
+                        final String[] s = item.split("_");
+                        vo.setNavValue(s[1]);
+                        final R r = productFeignService.getAttrsInfo(Long.parseLong(s[0]));
+                        if (r.getCode().equals(0)) {
+                            final AttrResponseVo attr = r.getData("attr", new TypeReference<AttrResponseVo>() {
+                            });
+                            vo.setNavName(attr.getAttrName());
+                        } else {
+                            vo.setNavName(s[0]);
+                        }
+                        //拿到所有条件，去掉当前
+                        final String encode = URLEncoder.DEFAULT.encode(item, Charset.defaultCharset());
+                        final String replace = param.get_queryString().replaceAll("&?attrs=" + encode, "");
+                        vo.setLink("http://search.gulimall.com/list.html?"+replace);
+
+                        return vo;
+                    })
+                    .collect(Collectors.toList());
+            result.setNavs(collect);
+        }
+
 
         return result;
     }
