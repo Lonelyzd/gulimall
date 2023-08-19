@@ -512,7 +512,7 @@
                         <li>京东价</li>
                         <li>
                             <span>￥</span>
-                            <span th:text="${#numbers.formatDecimal(item.info.price,1,2)}">/span>
+                            <span th:text="${#numbers.formatDecimal(item.info.price,1,2)}"></span>
                         </li>
                         <li>
                             预约享资格
@@ -608,7 +608,7 @@
                         <dl>
                             <dt>选择[[${attr.attrName}]]</dt>
                             <dd th:each="attrVal:${attr.attrValues}">
-                                <a href="/static/item/#" th:text="${attrVal.attrValue}">摩卡金</a>
+                                <a th:attr="skus=${attrVal.skuIds},class=${#lists.contains(#strings.listSplit(attrVal.skuIds,','),item.info.skuId.toString())?'sku_attr_value checked':'sku_attr_value'}">[[${attrVal.attrValue}]]</a>
                             </dd>
                         </dl>
                     </div>
@@ -1534,6 +1534,30 @@
 <script src="/static/item/js/jquery1.9.js" type="text/javascript" charset="utf-8"></script>
 <script src="/static/item/js/js.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript">
+    $(function () {
+        $(".sku_attr_value").parent().css({"border": "solid 1px #CCC"})
+        $("a[class='sku_attr_value checked']").parent().css({"border": "solid 1px red"})
+    })
+
+    $(".sku_attr_value").click(function () {
+        let skus = [];
+        $(this).addClass("clicked");
+        let curr = $(this).attr("skus").split(",");
+        //当前被点击的skus放入二维数组
+        skus.push(curr);
+        $(this).parent().parent().find(".sku_attr_value").removeClass("checked");
+
+        $("a[class='sku_attr_value checked']").each(function () {
+            skus.push($(this).attr("skus").split(","));
+        })
+
+        let filterElm = skus[0];
+        for (let i = 1; i < skus.length; i++) {
+            filterElm = $(filterElm).filter(skus[i])
+        }
+
+        location.href=`${location.origin}/${filterElm[0]}.html`
+    })
 </script>
 
 </html>

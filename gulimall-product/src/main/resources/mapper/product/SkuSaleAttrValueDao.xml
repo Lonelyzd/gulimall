@@ -22,7 +22,7 @@
         </collection>
     </resultMap>
     <select id="getSaleAttrsBySpuId" resultMap="SkuItemSaleAttrVo">
-        SELECT GROUP_CONCAT(info.sku_id, ',') sku_ids,
+        SELECT GROUP_CONCAT(info.sku_id) sku_ids,
                ssav.attr_id,
                ssav.attr_name,
                ssav.attr_value                attr_value
