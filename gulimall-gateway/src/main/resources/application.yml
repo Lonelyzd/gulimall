@@ -43,7 +43,11 @@ spring:
           uri: lb://gulimall-product #目标服务
           predicates:
             - Host=gulimall.com,item.gulimall.com #监听的域名
-        - id: mall_search_toute
+        - id: mall_search_toutec  #搜索服务路由
           uri: lb://gulimall-search #目标服务
           predicates:
             - Host=search.gulimall.com #监听的域名
+        - id: mall_auth_toute #认证服务路由
+          uri: lb://gulimall-auth-server #目标服务
+          predicates:
+            - Host=auth.gulimall.com #监听的域名

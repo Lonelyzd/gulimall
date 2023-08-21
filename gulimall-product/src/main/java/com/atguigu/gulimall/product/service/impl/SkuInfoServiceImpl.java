@@ -16,6 +16,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,8 +24,11 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 
-
+@Slf4j
 @Service("skuInfoService")
 public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoDao, SkuInfoEntity> implements SkuInfoService {
 
@@ -39,6 +43,9 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoDao, SkuInfoEntity> i
 
     @Autowired
     private SkuSaleAttrValueService skuSaleAttrValueService;
+
+    @Autowired
+    private ThreadPoolExecutor executor;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -100,29 +107,53 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoDao, SkuInfoEntity> i
     public SkuItemVo item(Long skuId) {
         SkuItemVo vo = new SkuItemVo();
 
-        //1.SKU基本信息获取
-        final SkuInfoEntity info = this.getById(skuId);
-        vo.setInfo(info);
-        final Long spuId = info.getSpuId();
+        final CompletableFuture<SkuInfoEntity> infoFuture = CompletableFuture.supplyAsync(() -> {
+            log.info("111");
+            //1.SKU基本信息获取
+            final SkuInfoEntity info = this.getById(skuId);
+            vo.setInfo(info);
+            return info;
+        }, executor);
 
-        //2.SKU图片信息
-        final List<SkuImagesEntity> images = skuImagesService.getImagesBySkuId(skuId);
-        vo.setImages(images);
 
-        //3.SPU的销售组合
-        List<SkuItemSaleAttrVo> skuItemSaleAttrVo=skuSaleAttrValueService.getSaleAttrsBySpuId(spuId);
-        vo.setSaleAttr(skuItemSaleAttrVo);
+        final CompletableFuture<Void> saleAttrFuture = infoFuture.thenAcceptAsync((res) -> {
+            //3.SPU的销售组合
+            log.info("333");
+            List<SkuItemSaleAttrVo> skuItemSaleAttrVo = skuSaleAttrValueService.getSaleAttrsBySpuId(res.getSpuId());
+            vo.setSaleAttr(skuItemSaleAttrVo);
+        }, executor);
 
-        //4.获取SPU的介绍
+        final CompletableFuture<Void> descFuture = infoFuture.thenAcceptAsync((res) -> {
+            //4.获取SPU的介绍
+            log.info("444");
+            final SpuInfoDescEntity spuInfoDesc = spuInfoDescService.getById(res.getSpuId());
+            vo.setDesp(spuInfoDesc);
+        }, executor);
 
-        final SpuInfoDescEntity spuInfoDesc = spuInfoDescService.getById(spuId);
-        vo.setDesp(spuInfoDesc);
+        final CompletableFuture<Void> baseAttrFuture = infoFuture.thenAcceptAsync((res) -> {
+            //5.SPU规格参数信息
+            log.info("555");
+            List<SpuItemGroupAttrVo> spuItemGroupAttrVo = attrGroupService.getAttrGroupWithAttrsBySpuId(res.getSpuId(), res.getCatalogId());
+            vo.setGroupAttrs(spuItemGroupAttrVo);
+        }, executor);
 
-        //5.SPU规格参数信息
-        List<SpuItemGroupAttrVo> spuItemGroupAttrVo = attrGroupService.getAttrGroupWithAttrsBySpuId(spuId, info.getCatalogId());
 
-        vo.setGroupAttrs(spuItemGroupAttrVo);
+        final CompletableFuture<Void> imageFuture = CompletableFuture.runAsync(() -> {
+            log.info("222");
+            //2.SKU图片信息
+            final List<SkuImagesEntity> images = skuImagesService.getImagesBySkuId(skuId);
+            vo.setImages(images);
+        });
 
+
+        //等待异步任务都完成
+        try {
+            CompletableFuture.allOf(saleAttrFuture,descFuture,baseAttrFuture,imageFuture).get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
         return vo;
     }
 
