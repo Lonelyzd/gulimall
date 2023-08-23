@@ -3,15 +3,18 @@ package com.atguigu.gulimall.auth.controller;
 import com.atguigu.common.constant.AuthServiceConstant;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.auth.feign.ThridPartFeignService;
+import com.atguigu.gulimall.auth.vo.UserRegistVo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.atguigu.common.exception.BizCodeEnum.SMS_CODE_EXCEPTION;
@@ -44,7 +47,7 @@ public class LoginController {
         }
 
         //2.验证码的再次校验 sms:code:phone  124564
-        final String code  = String.format("%04d", new Random().nextInt(4000));
+        final String code = String.format("%04d", new Random().nextInt(4000));
         final String codeTime = code + '_' + System.currentTimeMillis();
         thridPartFeignService.sendCode(phone, code);
 
@@ -53,10 +56,11 @@ public class LoginController {
         return R.ok();
     }
 
-    public String regist(){
+    @PostMapping("/regist")
+    public String regist(@Valid UserRegistVo vo, BindingResult result) {
         //注册成功回到首页
 
 
-        return "";
+        return "redirect:/login.html";
     }
 }
