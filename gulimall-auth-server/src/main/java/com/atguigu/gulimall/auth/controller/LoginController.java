@@ -32,7 +32,6 @@ public class LoginController {
 
     @GetMapping("/sms/sendcode")
     public R sendCode(@RequestParam("phone") String phone) {
-
         //1.接口防刷
         final String oldCode = redisTemplate.opsForValue().get(AuthServiceConstant.SMS_CODE_CACHE_PREFIX + phone);
 
@@ -45,8 +44,6 @@ public class LoginController {
         }
 
         //2.验证码的再次校验 sms:code:phone  124564
-
-
         final String code  = String.format("%04d", new Random().nextInt(4000));
         final String codeTime = code + '_' + System.currentTimeMillis();
         thridPartFeignService.sendCode(phone, code);
@@ -54,5 +51,12 @@ public class LoginController {
         redisTemplate.opsForValue().set(AuthServiceConstant.SMS_CODE_CACHE_PREFIX + phone, codeTime, 10, TimeUnit.MINUTES);
 
         return R.ok();
+    }
+
+    public String regist(){
+        //注册成功回到首页
+
+
+        return "";
     }
 }
