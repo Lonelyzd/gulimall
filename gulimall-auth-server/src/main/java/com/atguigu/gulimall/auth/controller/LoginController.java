@@ -7,15 +7,20 @@ import com.atguigu.gulimall.auth.vo.UserRegistVo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.atguigu.common.exception.BizCodeEnum.SMS_CODE_EXCEPTION;
 
@@ -24,7 +29,7 @@ import static com.atguigu.common.exception.BizCodeEnum.SMS_CODE_EXCEPTION;
  * @date: 2023/8/20 21:16
  * @Description:
  */
-@RestController
+@Controller
 public class LoginController {
 
     @Autowired
@@ -57,8 +62,16 @@ public class LoginController {
     }
 
     @PostMapping("/regist")
-    public String regist(@Valid UserRegistVo vo, BindingResult result) {
+    public String regist(@Valid UserRegistVo vo, BindingResult result, Model model) {
         //注册成功回到首页
+         if (result.hasErrors()) {
+            final Map<String, String> errors = result.getFieldErrors()
+                    .stream()
+                    .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage));
+
+            model.addAttribute("errors", errors);
+            return "reg";
+        }
 
 
         return "redirect:/login.html";
