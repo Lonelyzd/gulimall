@@ -4,7 +4,9 @@ import com.atguigu.common.utils.R;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-/** 远程调用接口
+/**
+ * 远程调用优惠券服务接口
+ *
  * @author: z_dd
  * @date: 2023/1/29 12:26
  * @Description:

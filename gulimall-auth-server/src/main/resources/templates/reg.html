@@ -6039,11 +6039,14 @@ Cookie</span>是由网页服务器存放在您的访问设备上的文本文件�
 </header>
 <section>
     <form action="/regist" method="POST" class="one">
+		<div class="tips"   th:text="${errors!=null?(#maps.containsKey(errors,'msg')?errors.msg:_):_}">
+		</div>
         <div class="register-box">
+
             <label for="username" class="username_label">用 户 名
                 <input maxlength="20" name="username" id="username" type="text" placeholder="您的用户名和登录名">
             </label>
-            <div class="tips"  th:text="${errors!=null?(#maps.containsKey(errors,'userName')?errors.userName:_):_}">
+            <div class="tips"  th:text="${errors!=null?(#maps.containsKey(errors,'username')?errors.userName:_):_}">
             </div>
         </div>
         <div class="register-box">
@@ -6071,6 +6074,7 @@ Cookie</span>是由网页服务器存放在您的访问设备上的文本文件�
             <div class="tips"   th:text="${errors!=null?(#maps.containsKey(errors,'phone')?errors.phone:_):_}">
 
             </div>
+
         </div>
         <div class="register-box">
             <label for="code" class="other_label">验 证 码
