@@ -83,9 +83,19 @@
         <div class="si_out">
             <ul>
                 <li>
-                    <a href="/static/login/#">
+                    <a >
                         <img src="/static/login/JD_img/qq.png"/>
-                        <span>QQ</span>
+                        <span id="qqLoginBtn">QQ</span>
+                        <script type="text/javascript"  charset="utf-8"
+                                src="http://connect.qq.com/qc_jssdk.js"
+                                data-appid="102067382"
+                                data-redirecturi="http://auth.icebule.top/success"
+                        ></script>
+                        <script type="text/javascript">
+                            QC.Login({
+                                btnId:"qqLoginBtn"	//插入按钮的节点id
+                            });
+                        </script>
                     </a>
                 </li>
                 <li class="f4"> |</li>
@@ -184,5 +194,26 @@
             pass.style.border = '1px solid red';
         }
     }
+
+    /**
+     * 封装一个居中打开新窗口的方法
+     */
+    function openWindow(url, width, height)
+    {
+        width = width || 600;
+        height = height || 400;
+        var left = (window.screen.width - width) / 2;
+        var top = (window.screen.height - height) / 2;
+        window.open(url, "_blank", "toolbar=yes, location=yes, directories=no, status=no, menubar=yes, scrollbars=yes, resizable=no, copyhistory=yes, left="+left+", top="+top+", width="+width+", height="+height);
+    }
+
+    function qqLogin()
+    {
+        var qqAppId = '102067382'; // 上面申请得到的appid
+        var qqAuthPath = 'http://auth.icebule.top/success'; // 前面设置的回调地址
+        var state = 'fjdslfjsdlkfd'; // 防止CSRF攻击的随机参数，必传，登录成功之后会回传，最好后台自己生成然后校验合法性
+        openWindow(`https://graph.qq.com/oauth2.0/authorize?response_type=token&client_id=${qqAppId}&redirect_uri=${encodeURIComponent(qqAuthPath)}&state=${state}`);
+    }
 </script>
+
 </html>

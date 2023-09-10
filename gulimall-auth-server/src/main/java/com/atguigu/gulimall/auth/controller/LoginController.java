@@ -143,7 +143,8 @@ public class LoginController {
             attributes.addFlashAttribute("errors", errors);
             return "redirect:http://auth.gulimall.com/login.html";
         }
-
-
     }
+
+
+
 }

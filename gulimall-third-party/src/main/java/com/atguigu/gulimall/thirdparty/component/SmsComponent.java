@@ -1,6 +1,6 @@
 package com.atguigu.gulimall.thirdparty.component;
 
-import com.atguigu.gulimall.thirdparty.util.HttpUtils;
+import com.atguigu.common.utils.HttpUtils;
 import lombok.Data;
 import org.apache.http.HttpResponse;
 import org.springframework.boot.context.properties.ConfigurationProperties;
