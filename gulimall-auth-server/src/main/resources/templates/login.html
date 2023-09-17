@@ -55,11 +55,11 @@
         </div>
         <div class="si_bom1 tab" style="display: none;">
             <form action="/login" method="post">
-                <div class="error" >
+                <div class="error">
                     <div></div>
                     请输入账户名和密码
                 </div>
-                <div  th:text="${errors!=null?(#maps.containsKey(errors,'msg')?errors.msg:_):_}">
+                <div th:text="${errors!=null?(#maps.containsKey(errors,'msg')?errors.msg:_):_}">
                 </div>
                 <ul>
 
@@ -83,17 +83,20 @@
         <div class="si_out">
             <ul>
                 <li>
-                    <a >
+                    <a>
                         <img src="/static/login/JD_img/qq.png"/>
                         <span id="qqLoginBtn">QQ</span>
-                        <script type="text/javascript"  charset="utf-8"
+                        <script type="text/javascript" charset="utf-8"
                                 src="http://connect.qq.com/qc_jssdk.js"
                                 data-appid="102067382"
                                 data-redirecturi="http://auth.icebule.top/success"
                         ></script>
                         <script type="text/javascript">
                             QC.Login({
-                                btnId:"qqLoginBtn"	//插入按钮的节点id
+                                btnId: "qqLoginBtn"	//插入按钮的节点id
+                            }, function (reqData, opts) {
+                                alert(reqData)
+                                alert(opts)
                             });
                         </script>
                     </a>
@@ -198,17 +201,15 @@
     /**
      * 封装一个居中打开新窗口的方法
      */
-    function openWindow(url, width, height)
-    {
+    function openWindow(url, width, height) {
         width = width || 600;
         height = height || 400;
         var left = (window.screen.width - width) / 2;
         var top = (window.screen.height - height) / 2;
-        window.open(url, "_blank", "toolbar=yes, location=yes, directories=no, status=no, menubar=yes, scrollbars=yes, resizable=no, copyhistory=yes, left="+left+", top="+top+", width="+width+", height="+height);
+        window.open(url, "_blank", "toolbar=yes, location=yes, directories=no, status=no, menubar=yes, scrollbars=yes, resizable=no, copyhistory=yes, left=" + left + ", top=" + top + ", width=" + width + ", height=" + height);
     }
 
-    function qqLogin()
-    {
+    function qqLogin() {
         var qqAppId = '102067382'; // 上面申请得到的appid
         var qqAuthPath = 'http://auth.icebule.top/success'; // 前面设置的回调地址
         var state = 'fjdslfjsdlkfd'; // 防止CSRF攻击的随机参数，必传，登录成功之后会回传，最好后台自己生成然后校验合法性

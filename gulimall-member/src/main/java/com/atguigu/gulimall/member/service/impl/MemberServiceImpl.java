@@ -1,5 +1,7 @@
 package com.atguigu.gulimall.member.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
+import com.atguigu.common.utils.HttpUtils;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.gulimall.member.dao.MemberDao;
@@ -11,14 +13,21 @@ import com.atguigu.gulimall.member.service.MemberLevelService;
 import com.atguigu.gulimall.member.service.MemberService;
 import com.atguigu.gulimall.member.vo.MemberLoginVo;
 import com.atguigu.gulimall.member.vo.MemberRegistVo;
+import com.atguigu.gulimall.member.vo.QQAccountInfoVo;
+import com.atguigu.gulimall.member.vo.SocialUser;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.collect.ImmutableBiMap;
+import org.apache.http.HttpResponse;
+import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 
@@ -71,12 +80,6 @@ public class MemberServiceImpl extends ServiceImpl<MemberDao, MemberEntity> impl
         this.baseMapper.insert(entity);
     }
 
-    public static void main(String[] args) {
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        final String encode1 = passwordEncoder.encode("ASDLADJLADAS");
-        final String encode2 = passwordEncoder.encode("ASDLADJLADAS");
-        System.out.println(passwordEncoder.matches("ASDLADJLADAS    ", encode2));
-    }
 
     /**
      * 检查手机号是否唯一
@@ -128,4 +131,59 @@ public class MemberServiceImpl extends ServiceImpl<MemberDao, MemberEntity> impl
         }
         return null;
     }
+
+    /**
+     * 社交账号注册和登录
+     *
+     * @param vo :
+     * @Author: z_dd
+     * @Date: 2023/9/13 21:43
+     * @return: com.atguigu.gulimall.member.entity.MemberEntity
+     * @Description:
+     **/
+    @Override
+    public MemberEntity login(SocialUser vo) {
+        final String openid = vo.getOpenid();
+        final MemberEntity entity = this.baseMapper.selectOne(Wrappers.<MemberEntity>lambdaQuery()
+                .eq(MemberEntity::getSocialUid, vo.getClient_id())
+        );
+
+        if (entity != null) {
+//            表示用户已注册，
+
+            entity.setAccessToken(openid);
+            this.baseMapper.updateById(entity);
+
+            return entity;
+        } else {
+            //用户未注册,进行注册
+
+            try {
+                final HttpResponse httpResponse = HttpUtils.doGet("https://graph.qq.com", "/user/get_user_info", "GET",
+                        new HashMap<>(),
+                        ImmutableBiMap.of("access_token", vo.getAccessToken(), "oauth_consumer_key", "102067382", "openid", vo.getOpenid(), "fmt", "json")
+                );
+
+
+                MemberEntity memberEntity = new MemberEntity();
+                final String string = EntityUtils.toString(httpResponse.getEntity());
+
+                final QQAccountInfoVo qqAccountInfoVo = JSONObject.parseObject(string, QQAccountInfoVo.class);
+                memberEntity.setAccessToken(vo.getAccessToken());
+                memberEntity.setUsername(qqAccountInfoVo.getNickname());
+                memberEntity.setGender(qqAccountInfoVo.getGender_type() == 2 ? 1 : 2);
+                memberEntity.setCreateTime(new Date());
+                memberEntity.setHeader(qqAccountInfoVo.getFigureurl_qq());
+                memberEntity.setCity(qqAccountInfoVo.getCity());
+                this.baseMapper.insert(memberEntity);
+
+                return memberEntity;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+    }
+
+
 }

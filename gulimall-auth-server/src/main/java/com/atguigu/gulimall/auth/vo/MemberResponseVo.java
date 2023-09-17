@@ -1,28 +1,22 @@
-package com.atguigu.gulimall.member.entity;
+package com.atguigu.gulimall.auth.vo;
 
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 会员
- *
- * @author IceBlue
- * @email icebule.top@qq.com
- * @date 2023-01-29 13:00:52
+ * @author: z_dd
+ * @date: 2023/9/17 21:48
+ * @Description:
  */
 @Data
-@TableName("ums_member")
-public class MemberEntity implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class MemberResponseVo implements Serializable {
+
 
     /**
      * id
      */
-    @TableId
     private Long id;
     /**
      * 会员等级id

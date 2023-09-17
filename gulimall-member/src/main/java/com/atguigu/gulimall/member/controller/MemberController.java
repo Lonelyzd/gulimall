@@ -10,6 +10,7 @@ import com.atguigu.gulimall.member.feign.CouponFeignService;
 import com.atguigu.gulimall.member.service.MemberService;
 import com.atguigu.gulimall.member.vo.MemberLoginVo;
 import com.atguigu.gulimall.member.vo.MemberRegistVo;
+import com.atguigu.gulimall.member.vo.SocialUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -102,6 +103,23 @@ public class MemberController {
         MemberEntity entity = memberService.login(vo);
         if (entity != null) {
             return R.ok();
+        } else {
+            return R.error(LOGINACCT_PASSWORD_EXCEPTION.getCode(), LOGINACCT_PASSWORD_EXCEPTION.getMsg());
+        }
+    }
+
+    /** 社交账号登录和注册
+     * @Author: z_dd
+     * @Date: 2023/9/13 21:43
+     * @param vo:
+     * @return: com.atguigu.common.utils.R
+     * @Description:
+     **/
+    @PostMapping("/oauth/login")
+    public R oauthLogin(@RequestBody SocialUser vo) {
+        MemberEntity entity = memberService.login(vo);
+        if (entity != null) {
+            return R.ok().setData(entity);
         } else {
             return R.error(LOGINACCT_PASSWORD_EXCEPTION.getCode(), LOGINACCT_PASSWORD_EXCEPTION.getMsg());
         }

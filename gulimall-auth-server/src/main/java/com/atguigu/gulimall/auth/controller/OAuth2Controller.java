@@ -1,17 +1,25 @@
 package com.atguigu.gulimall.auth.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import com.atguigu.common.utils.HttpUtils;
+import com.atguigu.common.utils.R;
+import com.atguigu.gulimall.auth.feign.MemberFeignService;
+import com.atguigu.gulimall.auth.vo.MemberResponseVo;
+import com.atguigu.gulimall.auth.vo.SocialUser;
 import com.google.common.collect.ImmutableBiMap;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 
 /**
@@ -21,6 +29,9 @@ import java.util.HashMap;
  */
 @Controller
 public class OAuth2Controller {
+
+    @Autowired
+    private MemberFeignService memberFeignService;
 
     /**
      * QQ鉴权 因为QQ的回调接口参数前面有'#'，导致SpringMVC接收不到参数，所以先用这个接口中转处理下
@@ -58,21 +69,33 @@ public class OAuth2Controller {
      * @Description:
      **/
     @GetMapping("/success1")
-    public String success(@RequestParam("access_token") String accessToken, @RequestParam("expires_in") String expiresIn) throws Exception {
+    @ResponseBody
+    public String success(@RequestParam("access_token") String accessToken, @RequestParam("expires_in") String expiresIn, HttpSession session) throws Exception {
 
         final HttpResponse httpResponse = HttpUtils.doGet("https://graph.qq.com", "/oauth2.0/me", "GET", new HashMap<>(), ImmutableBiMap.of("access_token", accessToken));
 
         if (httpResponse.getStatusLine().getStatusCode() == 200) {
-            final String string = httpResponse.getEntity().getContent().toString();
-
-
             final String entityString = EntityUtils.toString(httpResponse.getEntity());
-            ConvertToJson(entityString);
+            final JSONObject jsonObject = ConvertToJson(entityString);
+
+            final SocialUser socialUser = JSONObject.parseObject(jsonObject.toJSONString(), SocialUser.class);
+            socialUser.setAccessToken(accessToken);
+
+            //知道当前是哪个社交用户登录
+            //1、 当前用户如果是第一次进入网站，自动注册（为当前社交用户进行注册）
             System.out.println(entityString);
+
+            final R r = memberFeignService.oauthLogin(socialUser);
+            final MemberResponseVo data = r.getData(new TypeReference<MemberResponseVo>() {
+            });
+
+            session.setAttribute("loginUser", data);
+
+            return "redirect:http://icebule.top";
+
+        } else {
+            return "redirect:http://auth.gulimall.com/login.html";
         }
-
-
-        return "111";
     }
 
     //QQ接口返回类型是text/plain，此处将其转为json
