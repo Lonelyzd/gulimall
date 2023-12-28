@@ -2,11 +2,9 @@ package com.atguigu.gulimall.product;
 
 import com.atguigu.gulimall.product.dao.AttrGroupDao;
 import com.atguigu.gulimall.product.dao.SkuSaleAttrValueDao;
-import com.atguigu.gulimall.product.entity.BrandEntity;
+import com.atguigu.gulimall.product.dao.TestDao;
+import com.atguigu.gulimall.product.entity.TestEntity;
 import com.atguigu.gulimall.product.service.BrandService;
-import com.atguigu.gulimall.product.vo.SkuItemSaleAttrVo;
-import com.atguigu.gulimall.product.vo.SpuItemGroupAttrVo;
-import com.sun.org.apache.bcel.internal.generic.NEW;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.redisson.api.RLock;
@@ -15,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
@@ -34,13 +34,15 @@ public class GulimallProductApplicationTests {
     @Autowired
     private SkuSaleAttrValueDao skuSaleAttrValueDao;
 
+    @Autowired
+    TestDao testDao;
+
     @Test
     public void contextLoads() {
-        BrandEntity brandEntity = new BrandEntity();
-        brandEntity.setDescript("hello");
-        brandEntity.setName("华为");
-        brandService.save(brandEntity);
-        System.out.println("保存成功");
+        final Map<String, Map<String, Map<String, String>>> test = testDao.getTest();
+        final Map<String, Map<String, String>> 开发 = test.get("开发");
+        final Map<String, String> level = 开发.get("level");
+        List<TestEntity> a = new ArrayList<>();
     }
 
     @Test
@@ -61,7 +63,11 @@ public class GulimallProductApplicationTests {
         // internalLockLeaseTime 【看门狗时间】 / 3， 10s
         try {
             System.out.println("加锁成功，执行业务..." + Thread.currentThread().getId());
-            try { TimeUnit.SECONDS.sleep(20); } catch (InterruptedException e) { e.printStackTrace(); }
+            try {
+                TimeUnit.SECONDS.sleep(20);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {
@@ -71,11 +77,5 @@ public class GulimallProductApplicationTests {
         }
     }
 
-    @Test
-    public void attrGroupDaoTets(){
-        final List<SpuItemGroupAttrVo> attrGroupWithAttrsBySpuId = attrGroupDao.getAttrGroupWithAttrsBySpuId(13L,225L);
 
-        final List<SkuItemSaleAttrVo> saleAttrsBySpuId = skuSaleAttrValueDao.getSaleAttrsBySpuId(20L);
-        System.out.println(attrGroupWithAttrsBySpuId);
-    }
 }

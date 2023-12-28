@@ -51,3 +51,7 @@ spring:
           uri: lb://gulimall-auth-server #目标服务
           predicates:
             - Host=auth.gulimall.com #监听的域名
+        - id: gulimall_cart_toute #购物车服务
+          uri: lb://gulimall-cart #目标服务
+          predicates:
+            - Host=cart.gulimall.com #监听的域名

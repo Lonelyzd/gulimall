@@ -5,7 +5,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.atguigu.common.utils.HttpUtils;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.auth.feign.MemberFeignService;
-import com.atguigu.gulimall.auth.vo.MemberResponseVo;
+import com.atguigu.common.vo.MemberResponseVo;
 import com.atguigu.gulimall.auth.vo.SocialUser;
 import com.google.common.collect.ImmutableBiMap;
 import org.apache.http.HttpResponse;
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -69,7 +68,6 @@ public class OAuth2Controller {
      * @Description:
      **/
     @GetMapping("/success1")
-    @ResponseBody
     public String success(@RequestParam("access_token") String accessToken, @RequestParam("expires_in") String expiresIn, HttpSession session) throws Exception {
 
         final HttpResponse httpResponse = HttpUtils.doGet("https://graph.qq.com", "/oauth2.0/me", "GET", new HashMap<>(), ImmutableBiMap.of("access_token", accessToken));
@@ -90,6 +88,7 @@ public class OAuth2Controller {
             });
 
             session.setAttribute("loginUser", data);
+            System.out.println(session.getId());
 
             return "redirect:http://icebule.top";
 
