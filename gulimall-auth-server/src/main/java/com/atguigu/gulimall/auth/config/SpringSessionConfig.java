@@ -22,7 +22,7 @@ public class SpringSessionConfig {
         serializer.setCookiePath("/");
         //域名截取
 //        serializer.setDomainNamePattern("^.+?\\.(\\w+\\.[a-z]+)$");
-        serializer.setDomainName("icebule.top");
+        serializer.setDomainName("gulimall.com");
 
         return serializer;
     }

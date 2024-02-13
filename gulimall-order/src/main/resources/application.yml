@@ -6,6 +6,17 @@ spring:
     url: jdbc:mysql://192.168.189.128:3306/gulimall_oms?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: root
+  rabbitmq:
+    host: 192.168.189.128
+    port: 5672
+    virtual-host: /
+    publisher-confirms: true
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: manual
 
 # MapperScan
 # sql映射文件位置

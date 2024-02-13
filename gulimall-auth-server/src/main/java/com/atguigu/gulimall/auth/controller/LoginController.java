@@ -3,6 +3,7 @@ package com.atguigu.gulimall.auth.controller;
 import com.alibaba.fastjson.TypeReference;
 import com.atguigu.common.constant.AuthServiceConstant;
 import com.atguigu.common.utils.R;
+import com.atguigu.common.vo.MemberResponseVo;
 import com.atguigu.gulimall.auth.feign.MemberFeignService;
 import com.atguigu.gulimall.auth.feign.ThridPartFeignService;
 import com.atguigu.gulimall.auth.vo.UserLoginVo;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
@@ -129,8 +131,14 @@ public class LoginController {
     }
 
     @PostMapping("/login")
-    public String login(UserLoginVo vo, RedirectAttributes attributes) {
+    public String login(UserLoginVo vo, RedirectAttributes attributes, HttpSession session) {
         final R login = memberFeignService.login(vo);
+
+        final MemberResponseVo userVo = login.getData(new TypeReference<MemberResponseVo>() {
+        });
+
+        session.setAttribute(AuthServiceConstant.LOGIN_USER, userVo);
+        System.out.println(session.getId());
 
         if (login.getCode().equals(0)) {
             return "redirect:http://gulimall.com";

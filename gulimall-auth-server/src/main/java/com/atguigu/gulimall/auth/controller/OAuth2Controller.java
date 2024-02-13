@@ -2,6 +2,7 @@ package com.atguigu.gulimall.auth.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.atguigu.common.constant.AuthServiceConstant;
 import com.atguigu.common.utils.HttpUtils;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.auth.feign.MemberFeignService;
@@ -87,7 +88,7 @@ public class OAuth2Controller {
             final MemberResponseVo data = r.getData(new TypeReference<MemberResponseVo>() {
             });
 
-            session.setAttribute("loginUser", data);
+            session.setAttribute(AuthServiceConstant.LOGIN_USER, data);
             System.out.println(session.getId());
 
             return "redirect:http://icebule.top";
