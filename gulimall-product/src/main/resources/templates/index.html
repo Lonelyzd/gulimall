@@ -93,17 +93,17 @@
                     <a href="#">海外</a>
                 </div>
             </b>
-            <ul >
-                <li>
+            <ul>
+                <li style="width: auto">
                     <a th:if="${session.loginUser==null}" href="http://auth.gulimall.com/login.html" >请先登录</a>
                     <a th:if="${session.loginUser!=null}"  >你好，[[${session?.loginUser?.username}]]</a>
                 </li>
-                <li>
+                <li th:if="${session.loginUser==null}">
                     <a href="http://auth.gulimall.com/reg.html" class="li_2">免费注册</a>
                 </li>
                 <span>|</span>
                 <li>
-                    <a href="#">我的订单</a>
+                    <a href="http://order.gulimall.com/list.html">我的订单</a>
                 </li>
 
 

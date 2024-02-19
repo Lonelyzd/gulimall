@@ -3,6 +3,8 @@ package com.atguigu.gulimall.cart.service;
 import com.atguigu.gulimall.cart.vo.Cart;
 import com.atguigu.gulimall.cart.vo.CartItem;
 
+import java.util.List;
+
 /**
  * @author : z_dd
  * @date : 2024/1/1 20:41
@@ -30,4 +32,6 @@ public interface CartService {
     void countItem(Long skuId, Integer num);
 
     void deleteItem(Long skuId);
+
+    List<CartItem> getUserCartItems();
 }

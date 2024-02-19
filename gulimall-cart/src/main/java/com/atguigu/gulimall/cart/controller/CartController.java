@@ -6,11 +6,11 @@ import com.atguigu.gulimall.cart.vo.CartItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
 
 /**
  * @author : z_dd
@@ -22,6 +22,11 @@ public class CartController {
     @Autowired
     private CartService cartService;
 
+    @GetMapping("/currentUserCartItems")
+    @ResponseBody
+    public List<CartItem> getCurrentUserItems() {
+        return cartService.getUserCartItems();
+    }
 
     @RequestMapping("/cart.html")
     public String cartListPage(Model model) {
@@ -62,18 +67,19 @@ public class CartController {
 
     @GetMapping("/checkItem")
     public String checkItem(@RequestParam Long skuId, @RequestParam Integer check) {
-        cartService.checkItem(skuId,check);
+        cartService.checkItem(skuId, check);
         return "redirect:http://cart.gulimall.com/cart.html";
     }
 
     @GetMapping("/countItem")
-    public String countItem(@RequestParam Long skuId, @RequestParam Integer num){
-        cartService.countItem(skuId,num);
+    public String countItem(@RequestParam Long skuId, @RequestParam Integer num) {
+        cartService.countItem(skuId, num);
 
         return "redirect:http://cart.gulimall.com/cart.html";
     }
+
     @GetMapping("/deleteItem")
-    public String deleteItem(@RequestParam Long skuId){
+    public String deleteItem(@RequestParam Long skuId) {
         cartService.deleteItem(skuId);
 
         return "redirect:http://cart.gulimall.com/cart.html";
