@@ -56,15 +56,33 @@ public class SpuInfoController {
         return R.ok();
     }
 
+    /**
+     * 根据skuId获取SPU信息
+     *
+     * @param skuId:
+     * @return R
+     * @author z_dd
+     * @date 2024/2/25 21:09
+     **/
+    @GetMapping("/skuId/{id}")
+    public R getSpuInfoBySkuId(@PathVariable("id") Long skuId) {
+        SpuInfoEntity entity = spuInfoService.getSpuInfoBySkuId(skuId);
+        return R.ok().setData(entity);
+
+    }
+
     //  /product/spuinfo/{spuId}/up
-    /** 商品上架
+
+    /**
+     * 商品上架
+     *
+     * @param spuId:
      * @Author: z_dd
      * @Date: 2023/4/15 21:41
-     * @param spuId:
      * @return: com.atguigu.common.utils.R
      **/
     @PostMapping("/{spuId}/up")
-    public R spuUp(@PathVariable("spuId")Long spuId){
+    public R spuUp(@PathVariable("spuId") Long spuId) {
 
         spuInfoService.up(spuId);
         return R.ok();
