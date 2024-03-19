@@ -12,10 +12,18 @@
         <result property="skuName" column="sku_name"/>
         <result property="stockLocked" column="stock_locked"/>
     </resultMap>
+    <update id="lockSkuStock">
+        <![CDATA[ UPDATE wms_ware_sku SET stock_locked=stock_locked+#{num}
+        WHERE sku_id=#{skuId} AND ware_id=#{wareId} AND stock_locked+#{num}<=stock
+        ]]>
+    </update>
     <select id="getSkuStock" resultType="java.lang.Long">
         SELECT SUM(stock - stock_locked)
         FROM wms_ware_sku
         WHERE id = #{skuId}
+    </select>
+    <select id="listWareIdHasSkuStock" resultType="java.lang.Long">
+        SELECT  * FROm wms_ware_sku where stock>stock_locked AND sku_id=#{skuId}
     </select>
 
 
