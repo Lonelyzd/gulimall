@@ -2,6 +2,7 @@ package com.atguigu.gulimall.order.service.impl;
 
 import com.alibaba.fastjson.TypeReference;
 import com.atguigu.common.exception.NoStockException;
+import com.atguigu.common.to.mq.OrderTo;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
 import com.atguigu.common.utils.R;
@@ -23,13 +24,16 @@ import com.atguigu.gulimall.order.vo.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import io.seata.spring.annotation.GlobalTransactional;
 import lombok.SneakyThrows;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestAttributes;
@@ -67,7 +71,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
     private ProductFeignService productFeignService;
 
     @Autowired
-    OrderItemService orderItemService;
+    private OrderItemService orderItemService;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -146,15 +153,15 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         return vo;
     }
 
-    @GlobalTransactional
+    //    @GlobalTransactional
     @Override
+    @Transactional
     public SubmitOrderResponseVo submitOrder(OrderSubmitVo vo) {
         SubmitOrderResponseVo responseVo = new SubmitOrderResponseVo();
         final MemberResponseVo memberResponseVo = LoginUserInterceptor.loginUser.get();
         confirmVoThreadLocal.set(vo);
         //1.验证令牌(令牌的对比和删除必须保证原子性)
         final String orderToken = vo.getOrderToken();
-
 
 
         //Lua脚本返回结果：0失败；1成功
@@ -198,20 +205,76 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
                 if (r.getCode().equals(0)) {
                     //锁定成功
                     responseVo.setOrder(order.getOrder());
-                    //todo 回滚
-                    int i=10/0;
+                    //zdd TODO 2024/3/24 20:56 : 订单创建成功，发送消息给MQ
+                    rabbitTemplate.convertAndSend("order-event-exchange",
+                            "order.create.order",
+                            order.getOrder());
+                    responseVo.setCode(0);
                     return responseVo;
                 } else {
                     //锁定失败
                     final String s = (String) r.get("msg");
                     throw new NoStockException(s);
-
                 }
             } else {
                 responseVo.setCode(2);
                 return responseVo;
             }
         }
+    }
+
+    @Override
+    public OrderEntity getOrderByOrderSn(String orderSn) {
+        return
+                this.getOne(Wrappers.<OrderEntity>lambdaQuery().eq(OrderEntity::getOrderSn, orderSn));
+    }
+
+    @Override
+    public void closeOrder(OrderEntity entity) {
+        //查询当前这个订单的最新状态
+        final OrderEntity orderEntity = this.getById(entity.getId());
+
+        if (OrderStatusEnum.CREATE_NEW.getCode().equals(orderEntity.getStatus())) {
+            //关单
+            OrderEntity order = new OrderEntity();
+            order.setId(entity.getId());
+            order.setStatus(OrderStatusEnum.CANCLED.getCode());
+
+            this.updateById(order);
+
+            //给MQ发送一个关单消息，立即解锁库存
+            final OrderTo orderTo = new OrderTo();
+            BeanUtils.copyProperties(entity, orderTo);
+            rabbitTemplate.convertAndSend("order-event-exchange", "order.release.other", orderTo);
+
+        }
+    }
+
+    /**
+     * 获取订单的支付信息
+     *
+     * @param orderSn :
+     * @return PayVo
+     * @author z_dd
+     * @date 2024/4/2 20:58
+     **/
+    @Override
+    public PayVo getOrderPay(String orderSn) {
+        PayVo vo = new PayVo();
+
+        final OrderEntity order = this.getOrderByOrderSn(orderSn);
+        final List<OrderItemEntity> list = orderItemService.list(Wrappers.<OrderItemEntity>lambdaQuery().eq(OrderItemEntity::getOrderSn, orderSn));
+
+        final BigDecimal bigDecimal = order.getTotalAmount().setScale(2, BigDecimal.ROUND_UP);
+
+
+        vo.setTotal_amount(bigDecimal.toString());
+        vo.setOut_trade_no(orderSn);
+        final OrderItemEntity orderItemEntity = list.get(0);
+        vo.setSubject(orderItemEntity.getSkuName());
+        vo.setBody(orderItemEntity.getSkuAttrsVals());
+
+        return vo;
     }
 
     private void saveOrder(OrderCreateTo order) {
