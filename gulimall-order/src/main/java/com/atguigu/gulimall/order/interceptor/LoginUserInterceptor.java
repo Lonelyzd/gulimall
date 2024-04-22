@@ -21,8 +21,10 @@ public class LoginUserInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 
         final String requestURI = request.getRequestURI();
-        final boolean match = new AntPathMatcher().match("/order/order/status/**", requestURI);
-        if (match) return true;
+        final AntPathMatcher antPathMatcher = new AntPathMatcher();
+        final boolean match = antPathMatcher.match("/order/order/status/**", requestURI);
+        final boolean match1 = antPathMatcher.match("/payed/notify", requestURI);
+        if (match||match1) return true;
 
         final MemberResponseVo attribute = (MemberResponseVo) request.getSession().getAttribute(AuthServiceConstant.LOGIN_USER);
 

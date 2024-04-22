@@ -42,6 +42,20 @@ public class OrderController {
         return R.ok().put("page", page);
     }
 
+    /**
+     * 获取当前用户的订单信息
+     *
+     * @param params:
+     * @return R
+     * @author z_dd
+     * @date 2024/4/9 21:12
+     **/
+    @PostMapping("/listWithItem")
+    public R listWithItem(@RequestBody Map<String, Object> params) {
+        PageUtils page = orderService.queryPageWithItem(params);
+        return R.ok().put("page", page);
+    }
+
 
     /**
      * 信息

@@ -1,7 +1,6 @@
 package com.atguigu.gulimall.order.service.impl;
 
 import com.alibaba.fastjson.TypeReference;
-import com.atguigu.common.exception.NoStockException;
 import com.atguigu.common.to.mq.OrderTo;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
@@ -11,6 +10,7 @@ import com.atguigu.gulimall.order.constant.OrderConstant;
 import com.atguigu.gulimall.order.dao.OrderDao;
 import com.atguigu.gulimall.order.entity.OrderEntity;
 import com.atguigu.gulimall.order.entity.OrderItemEntity;
+import com.atguigu.gulimall.order.entity.PaymentInfoEntity;
 import com.atguigu.gulimall.order.enume.OrderStatusEnum;
 import com.atguigu.gulimall.order.feign.CartFeignService;
 import com.atguigu.gulimall.order.feign.MemberFeignService;
@@ -19,9 +19,11 @@ import com.atguigu.gulimall.order.feign.WmsFeignService;
 import com.atguigu.gulimall.order.interceptor.LoginUserInterceptor;
 import com.atguigu.gulimall.order.service.OrderItemService;
 import com.atguigu.gulimall.order.service.OrderService;
+import com.atguigu.gulimall.order.service.PaymentInfoService;
 import com.atguigu.gulimall.order.to.OrderCreateTo;
 import com.atguigu.gulimall.order.vo.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -76,6 +78,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    private PaymentInfoService paymentInfoService;
+
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
         IPage<OrderEntity> page = this.page(
@@ -84,6 +89,50 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         );
 
         return new PageUtils(page);
+    }
+
+    @Override
+    public PageUtils queryPageWithItem(Map<String, Object> params) {
+        final MemberResponseVo memberResponseVo = LoginUserInterceptor.loginUser.get();
+
+        IPage<OrderEntity> page = this.page(
+                new Query<OrderEntity>().getPage(params),
+                Wrappers.<OrderEntity>lambdaQuery()
+                        .eq(OrderEntity::getMemberId, memberResponseVo.getId())
+                        .orderByDesc(OrderEntity::getId)
+        );
+
+        page.getRecords()
+                .stream()
+                .peek(order -> {
+                    final List<OrderItemEntity> list = orderItemService.list(Wrappers.<OrderItemEntity>lambdaQuery()
+                            .eq(OrderItemEntity::getOrderSn, order.getOrderSn()));
+                    order.setItems(list);
+                }).collect(Collectors.toList());
+
+        return new PageUtils(page);
+    }
+
+    @Override
+    public String handleAliResult(PayAsyncVo vo) {
+        //保存交易流水
+        PaymentInfoEntity paymentInfoEntity = new PaymentInfoEntity();
+        paymentInfoEntity.setOrderSn(vo.getOut_trade_no());
+        paymentInfoEntity.setAlipayTradeNo(vo.getTrade_no());
+        paymentInfoEntity.setPaymentStatus(vo.getTrade_status());
+        paymentInfoEntity.setCallbackContent(vo.getNotify_time());
+
+        paymentInfoService.save(paymentInfoEntity);
+
+
+        //修改订单的状态信息
+        if (vo.getTrade_status().equals("TRADE_SUCCESS") || vo.getTrade_status().equals("TRADE_FINISHED")) {
+            final LambdaUpdateWrapper<OrderEntity> updateWrapper = new LambdaUpdateWrapper<>();
+            updateWrapper.set(OrderEntity::getStatus, OrderStatusEnum.PAYED.getCode())
+                    .eq(OrderEntity::getOrderSn, vo.getOut_trade_no());
+            this.baseMapper.update(null, updateWrapper);
+        }
+        return null;
     }
 
     /**
@@ -213,8 +262,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
                     return responseVo;
                 } else {
                     //锁定失败
-                    final String s = (String) r.get("msg");
-                    throw new NoStockException(s);
+//                    final String s = (String) r.get("msg");
+//                    throw new NoStockException(s);
+                    responseVo.setCode(3);
+                    return responseVo;
                 }
             } else {
                 responseVo.setCode(2);
