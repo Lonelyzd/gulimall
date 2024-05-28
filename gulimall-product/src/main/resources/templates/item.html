@@ -58,8 +58,11 @@
                 </li>
             </ul>
             <ul class="header_ul_right">
-                <li style="border: 0;"><a href="/static/item/../登录页面\index.html" class="aa">你好，请登录</a></li>
-                <li><a href="/static/item/../注册页面\index.html" style="color: red;">免费注册</a> |</li>
+                <li style="border: 0;width: 100px">
+                    <a href="http://auth.gulimall.com/login.html" class="aa" th:if="${session.loginUser==null}">你好，请登录</a>
+                    <a  class="aa" th:if="${session.loginUser!=null}">你好，[[${session?.loginUser?.username}]]</a>
+                </li>
+                <li><a href="http://auth.gulimall.com/reg.html" style="color: red;" th:if="${session.loginUser==null}">免费注册</a> |</li>
                 <li><a href="/static/item/javascript:;" class="aa">我的订单</a> |</li>
                 <li class="jingdong"><a href="/static/item/javascript:;">我的京东</a><span
                         class="glyphicon glyphicon-menu-down">|</span>
@@ -514,8 +517,14 @@
                             <span>￥</span>
                             <span th:text="${#numbers.formatDecimal(item.info.price,1,2)}"></span>
                         </li>
-                        <li>
-                            预约享资格
+                        <li style="color: red" th:if="${item.seckillInfo!=null}">
+                            <span th:if="${#dates.createNow().getTime()< item.seckillInfo.startTime}">
+                                 商品将会在[[${#dates.format(new java.util.Date(item.seckillInfo.startTime),"yyyy-MM-dd HH:mm:ss")}]]进行秒杀
+                            </span>
+
+                            <span th:if="${#dates.createNow().getTime()>= item.seckillInfo.startTime && #dates.createNow().getTime()<=item.seckillInfo.endTime}">
+                                秒杀价 [[${#numbers.formatDecimal(item.seckillInfo.seckillPrice,1,2)}]]
+                            </span>
                         </li>
                         <li>
                             <a href="/static/item/">
@@ -633,11 +642,20 @@
 
                         </div>
                     </div>
-                    <div class="box-btns-two">
-                        <a href="javascript:void(0)" id="addToCartA"   th:attr="skuId=${item.info.skuId}">
+                    <div class="box-btns-two"
+                         th:if="${#dates.createNow().getTime()>= item.seckillInfo.startTime && #dates.createNow().getTime()<=item.seckillInfo.endTime}">
+                        <a href="javascript:void(0)" id="seckillA"
+                           th:attr="skuId=${item.info.skuId},sessionId=${item.seckillInfo.promotionSessionId},code=${item.seckillInfo.randomCode}">
+                            立即抢购
+                        </a>
+                    </div>
+                    <div class="box-btns-two"
+                         th:unless="${#dates.createNow().getTime()>= item.seckillInfo.startTime && #dates.createNow().getTime()<=item.seckillInfo.endTime}">
+                        <a href="javascript:void(0)" id="addToCartA" th:attr="skuId=${item.info.skuId}">
                             加入购物车
                         </a>
                     </div>
+
                     <div class="box-btns-three">
                         <img src="/static/item/img/e4ed3606843f664591ff1f68f7fda12d.png" alt=""/> 分享
                     </div>
@@ -1565,6 +1583,24 @@
         let skuId = $("#addToCartA").attr("skuId");
         location.href = `http://cart.gulimall.com/addToCart?skuId=${skuId}&num=${num}`
 
+    })
+
+    $("#seckillA").click(function () {
+
+        let isLogin=[[${session.loginUser!=null}]]
+
+
+        if(isLogin){
+            let skuId = $(this).attr("skuId");
+            let sessionId = $(this).attr("sessionId");
+            let code = $(this).attr("code");
+            let num = $("#numInput").val();
+            location.href = `http://seckill.gulimall.com/kill?killId=${skuId}_${sessionId}&key=${code}&num=${num}`;
+        }else {
+            alert("请先登录")
+        }
+
+        return false;
     })
 </script>
 

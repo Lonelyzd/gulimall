@@ -1,13 +1,16 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import com.alibaba.fastjson.TypeReference;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.Query;
+import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.product.dao.SkuInfoDao;
 import com.atguigu.gulimall.product.entity.SkuImagesEntity;
 import com.atguigu.gulimall.product.entity.SkuInfoEntity;
 import com.atguigu.gulimall.product.entity.SpuInfoDescEntity;
-import com.atguigu.gulimall.product.entity.SpuInfoEntity;
+import com.atguigu.gulimall.product.feign.SeckillFeignService;
 import com.atguigu.gulimall.product.service.*;
+import com.atguigu.gulimall.product.vo.SeckillInfoVo;
 import com.atguigu.gulimall.product.vo.SkuItemSaleAttrVo;
 import com.atguigu.gulimall.product.vo.SkuItemVo;
 import com.atguigu.gulimall.product.vo.SpuItemGroupAttrVo;
@@ -46,6 +49,9 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoDao, SkuInfoEntity> i
 
     @Autowired
     private ThreadPoolExecutor executor;
+
+    @Autowired
+    private SeckillFeignService seckillFeignService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -108,7 +114,6 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoDao, SkuInfoEntity> i
         SkuItemVo vo = new SkuItemVo();
 
         final CompletableFuture<SkuInfoEntity> infoFuture = CompletableFuture.supplyAsync(() -> {
-            log.info("111");
             //1.SKU基本信息获取
             final SkuInfoEntity info = this.getById(skuId);
             vo.setInfo(info);
@@ -118,7 +123,6 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoDao, SkuInfoEntity> i
 
         final CompletableFuture<Void> saleAttrFuture = infoFuture.thenAcceptAsync((res) -> {
             //3.SPU的销售组合
-            log.info("333");
             List<SkuItemSaleAttrVo> skuItemSaleAttrVo = skuSaleAttrValueService.getSaleAttrsBySpuId(res.getSpuId());
             vo.setSaleAttr(skuItemSaleAttrVo);
         }, executor);
@@ -132,23 +136,33 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoDao, SkuInfoEntity> i
 
         final CompletableFuture<Void> baseAttrFuture = infoFuture.thenAcceptAsync((res) -> {
             //5.SPU规格参数信息
-            log.info("555");
             List<SpuItemGroupAttrVo> spuItemGroupAttrVo = attrGroupService.getAttrGroupWithAttrsBySpuId(res.getSpuId(), res.getCatalogId());
             vo.setGroupAttrs(spuItemGroupAttrVo);
         }, executor);
 
 
         final CompletableFuture<Void> imageFuture = CompletableFuture.runAsync(() -> {
-            log.info("222");
             //2.SKU图片信息
             final List<SkuImagesEntity> images = skuImagesService.getImagesBySkuId(skuId);
             vo.setImages(images);
-        });
+        }, executor);
+
+        final CompletableFuture<Void> seckillFuture = CompletableFuture.runAsync(() -> {
+
+            //6.查询当前Sku是否参与秒杀优惠
+            final R r = seckillFeignService.getSkuSeckillInfo(skuId);
+
+            if (r.getCode() == 0) {
+                final SeckillInfoVo data = r.getData(new TypeReference<SeckillInfoVo>() {
+                });
+                vo.setSeckillInfo(data);
+            }
+        }, executor);
 
 
         //等待异步任务都完成
         try {
-            CompletableFuture.allOf(saleAttrFuture,descFuture,baseAttrFuture,imageFuture).get();
+            CompletableFuture.allOf(saleAttrFuture, descFuture, baseAttrFuture, imageFuture, seckillFuture).get();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {

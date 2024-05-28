@@ -33,6 +33,12 @@ spring:
             - Path=/api/ware/** # 路径匹配规则
           filters:
             - RewritePath=/api/(?<segment>.*), /$\{segment} # 过滤器：过滤掉url里的manager,例如http://ip:port/manager/test -> http://ip:port/test
+        - id: coupon_route #后台管理服务
+          uri: lb://gulimall-coupon
+          predicates:
+            - Path=/api/coupon/**
+          filters:
+            - RewritePath=/api/(?<segment>.*), /$\{segment}
         - id: renren-fast #后台管理服务
           uri: lb://renren-fast
           predicates:
@@ -63,3 +69,7 @@ spring:
           uri: lb://gulimall-member #目标服务
           predicates:
             - Host=member.gulimall.com #监听的域名
+        - id: gulimall-seckill_toute #订单服务
+          uri: lb://gulimall-seckill #目标服务
+          predicates:
+            - Host=seckill.gulimall.com #监听的域名
