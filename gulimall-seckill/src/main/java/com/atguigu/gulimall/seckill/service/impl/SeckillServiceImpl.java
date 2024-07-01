@@ -1,16 +1,27 @@
 package com.atguigu.gulimall.seckill.service.impl;
 
+import com.alibaba.csp.sentinel.Entry;
+import com.alibaba.csp.sentinel.SphU;
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.atguigu.common.to.mq.SeckillOrderTo;
 import com.atguigu.common.utils.R;
+import com.atguigu.common.vo.MemberResponseVo;
 import com.atguigu.gulimall.seckill.feign.CouponFeignService;
 import com.atguigu.gulimall.seckill.feign.ProductFeignService;
+import com.atguigu.gulimall.seckill.interceptor.LoginUserInterceptor;
 import com.atguigu.gulimall.seckill.service.SeckillService;
 import com.atguigu.gulimall.seckill.to.SecKillSkuRedisTo;
 import com.atguigu.gulimall.seckill.vo.SeckillSessionsWithSkus;
 import com.atguigu.gulimall.seckill.vo.SkuInfoVo;
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RSemaphore;
 import org.redisson.api.RedissonClient;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.BoundHashOperations;
@@ -22,6 +33,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -29,6 +41,7 @@ import java.util.stream.Collectors;
  * @author : z_dd
  * @date : 2024/4/27 17:28
  **/
+@Slf4j
 @Service
 public class SeckillServiceImpl implements SeckillService {
 
@@ -43,6 +56,9 @@ public class SeckillServiceImpl implements SeckillService {
 
     @Autowired
     private RedissonClient redissonClient;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
 
     private static final String SESSIONS_CACHE_PREFIX = "seckill:sessions:";
@@ -71,38 +87,49 @@ public class SeckillServiceImpl implements SeckillService {
 
                 //2.缓存活动的商品信息
                 saveSessionSkuInfos(data);
+
             }
         }
     }
 
+    public List<SecKillSkuRedisTo> blockHandler(BlockException e){
+        log.error("资源{}被限流...", "getCurrentSeckillSkusResource", e);
+        return null;
+    }
+
     @Override
+    @SentinelResource(value = "getCurrentSeckillSkusResource",blockHandler="blockHandler")
     public List<SecKillSkuRedisTo> getCurrentSeckillSkus() {
         //1.确定当时时间属于哪个秒杀场次
         final long time = new Date().getTime();
 
-        final Set<String> keys = redisTemplate.keys(SESSIONS_CACHE_PREFIX + "*");
+        try (Entry entry = SphU.entry("seckillSkus")) {
+            final Set<String> keys = redisTemplate.keys(SESSIONS_CACHE_PREFIX + "*");
 
-        for (String key : keys) {
+            for (String key : keys) {
 
-            final String[] split = key.replace(SESSIONS_CACHE_PREFIX, "").split("_");
-            final long start = Long.parseLong(split[0]);
-            final long end = Long.parseLong(split[1]);
+                final String[] split = key.replace(SESSIONS_CACHE_PREFIX, "").split("_");
+                final long start = Long.parseLong(split[0]);
+                final long end = Long.parseLong(split[1]);
 
-            if (time >= start && time <= end) {
-                //2.获取当前场次的商品信息
-                final List<String> range = redisTemplate.opsForList().range(key, -100, 100);
+                if (time >= start && time <= end) {
+                    //2.获取当前场次的商品信息
+                    final List<String> range = redisTemplate.opsForList().range(key, -100, 100);
 
-                final BoundHashOperations<String, String, String> hashOps = redisTemplate.boundHashOps(SKUKILL_CACHE_PREFIX);
-                final List<String> list = hashOps.multiGet(range);
+                    final BoundHashOperations<String, String, String> hashOps = redisTemplate.boundHashOps(SKUKILL_CACHE_PREFIX);
+                    final List<String> list = hashOps.multiGet(range);
 
-                if (!CollectionUtils.isEmpty(list)) {
-                    final List<SecKillSkuRedisTo> collect = list.stream().map(item -> JSON.parseObject(item, SecKillSkuRedisTo.class)).collect(Collectors.toList());
-                    return collect;
+                    if (!CollectionUtils.isEmpty(list)) {
+                        final List<SecKillSkuRedisTo> collect = list.stream().map(item -> JSON.parseObject(item, SecKillSkuRedisTo.class)).collect(Collectors.toList());
+                        return collect;
+                    }
+                    break;
                 }
-                break;
             }
-        }
 
+        } catch (BlockException e) {
+            log.error("资源{}被限流...", "seckillSkus", e);
+        }
         return null;
     }
 
@@ -111,21 +138,78 @@ public class SeckillServiceImpl implements SeckillService {
         final BoundHashOperations<String, String, String> ops = redisTemplate.boundHashOps(SKUKILL_CACHE_PREFIX);
         final Set<String> keys = ops.keys();
 
-        if(!CollectionUtils.isEmpty(keys)){
-            String regx="^\\d+_"+skuId;
+        if (!CollectionUtils.isEmpty(keys)) {
+            String regx = "^\\d+_" + skuId;
             for (String key : keys) {
-                if (Pattern.matches(regx,key)) {
+                if (Pattern.matches(regx, key)) {
                     final String s = ops.get(key);
                     final SecKillSkuRedisTo secKillSkuRedisTo = JSON.parseObject(s, SecKillSkuRedisTo.class);
                     //随机码处理
                     final long time = new Date().getTime();
-                    if (time <secKillSkuRedisTo.getStartTime() || time>secKillSkuRedisTo.getEndTime() ){
+                    if (time < secKillSkuRedisTo.getStartTime() || time > secKillSkuRedisTo.getEndTime()) {
                         secKillSkuRedisTo.setRandomCode(null);
                     }
                     return secKillSkuRedisTo;
                 }
             }
         }
+        return null;
+    }
+
+    @Override
+    public String kill(String killId, String key, Integer num) {
+
+        final MemberResponseVo memberResponseVo = LoginUserInterceptor.loginUser.get();
+        //1.获取当前秒杀商品的详细信息
+
+        final BoundHashOperations<String, String, String> hashOperations = redisTemplate.boundHashOps(SKUKILL_CACHE_PREFIX);
+        final String json = hashOperations.get(killId);
+
+        if (StringUtils.isNotBlank(json)) {
+            final SecKillSkuRedisTo redis = JSON.parseObject(json, SecKillSkuRedisTo.class);
+            //校验合法性
+            final long time = new Date().getTime();
+            final Long startTime = redis.getStartTime();
+            final Long endTime = redis.getEndTime();
+
+            final long ttl = endTime - time;
+
+            //1.校验时间合法性
+            if (startTime <= time && time <= endTime) {
+                //2.校验随机码和商品id
+                final String randomCode = redis.getRandomCode();
+                final String skuId = redis.getPromotionSessionId() + "_" + redis.getSkuId();
+                if (randomCode.equals(key) && killId.equals(skuId)) {
+                    //3.验证购物数量是否合理
+                    if (num <= redis.getSeckillLimit()) {
+                        //4.验证当前账号是否已经购买过
+                        final String redisKey = memberResponseVo.getId() + "_" + skuId;
+                        final Boolean aBoolean = redisTemplate.opsForValue().setIfAbsent(redisKey, num.toString(), ttl, TimeUnit.MILLISECONDS);
+                        if (aBoolean) {
+                            final RSemaphore semaphore = redissonClient.getSemaphore(SKU_STOCK_SEMAPHORE + randomCode);
+                            final boolean b = semaphore.tryAcquire(num);
+                            if (b) {
+                                //秒杀成功，快速下单
+                                final String timeId = IdWorker.getTimeId();
+
+                                final SeckillOrderTo seckillOrderTo = new SeckillOrderTo();
+                                seckillOrderTo.setOrderSn(timeId);
+                                seckillOrderTo.setPromotionSessionId(redis.getPromotionSessionId());
+                                seckillOrderTo.setSkuId(redis.getSkuId());
+                                seckillOrderTo.setSeckillPrice(redis.getSeckillPrice());
+                                seckillOrderTo.setNum(num);
+                                seckillOrderTo.setMemberId(memberResponseVo.getId());
+
+                                rabbitTemplate.convertAndSend("order-event-exchange", "order.seckill.order", seckillOrderTo);
+                                return timeId;
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
         return null;
     }
 
@@ -167,6 +251,9 @@ public class SeckillServiceImpl implements SeckillService {
                             SecKillSkuRedisTo to = new SecKillSkuRedisTo();
                             //1.SKU的秒杀信息
                             BeanUtils.copyProperties(seckillSkuVo, to);
+
+                            to.setSeckillCount(seckillSkuVo.getSeckillCount().intValue());
+                            to.setSeckillLimit(seckillSkuVo.getSeckillLimit().intValue());
 
                             //2.SKU的基本信息
                             final R info = productFeignService.info(seckillSkuVo.getSkuId());

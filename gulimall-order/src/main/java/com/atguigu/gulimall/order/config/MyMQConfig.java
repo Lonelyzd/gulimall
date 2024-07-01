@@ -52,11 +52,13 @@ public class MyMQConfig {
     public Binding orderReleaseOrderBinding() {
         return new Binding("order.release.order.queue", Binding.DestinationType.QUEUE, "order-event-exchange", "order.release.order", null);
     }
-    /** 订单释放直接和库存释放进行绑定
+
+    /**
+     * 订单释放直接和库存释放进行绑定
+     *
+     * @return Binding
      * @author z_dd
      * @date 2024/3/24 21:20
-    
-     * @return Binding
      **/
     @Bean
     public Binding orderReleaseOtherBinding() {
@@ -66,5 +68,23 @@ public class MyMQConfig {
                 "order.release.other.#",
                 null);
     }
+
+    /**
+     * 秒杀单削峰队列
+     *
+     * @return Queue
+     * @author z_dd
+     * @date 2024/6/6 21:40
+     **/
+    @Bean
+    public Queue orderSeckillOrderQueue() {
+        return new Queue("order.seckill.order.queue", true, false, false);
+    }
+
+    @Bean
+    public Binding orderSeckillOrderQueueBinding() {
+        return new Binding("order.seckill.order.queue", Binding.DestinationType.QUEUE, "order-event-exchange", "order.seckill.order", null);
+    }
+
 
 }

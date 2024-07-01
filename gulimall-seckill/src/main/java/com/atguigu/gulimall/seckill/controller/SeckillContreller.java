@@ -4,10 +4,12 @@ import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.seckill.service.SeckillService;
 import com.atguigu.gulimall.seckill.to.SecKillSkuRedisTo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 
@@ -15,7 +17,7 @@ import java.util.List;
  * @author : z_dd
  * @date : 2024/5/9 21:24
  **/
-@RestController
+@Controller
 public class SeckillContreller {
 
     @Autowired
@@ -29,12 +31,14 @@ public class SeckillContreller {
      * @date 2024/5/9 21:27
      **/
     @GetMapping("/currentSeckillSkus")
+    @ResponseBody
     public R getCurrentSeckillSkus() {
         List<SecKillSkuRedisTo> vos = seckillService.getCurrentSeckillSkus();
         return R.ok().setData(vos);
     }
 
     @GetMapping("/sku/seckill/{skuId}")
+    @ResponseBody
     public R getSkuSeckillInfo(@PathVariable Long skuId) {
         SecKillSkuRedisTo vo = seckillService.getSkuSeckillInfo(skuId);
 
@@ -42,8 +46,14 @@ public class SeckillContreller {
     }
 
     @GetMapping("/kill")
-    public R seckill(@RequestParam String killId, @RequestParam String key, @RequestParam Integer num) {
+    public String seckill(@RequestParam String killId,
+                          @RequestParam String key,
+                          @RequestParam Integer num,
+                          Model model
+    ) {
 
-        return R.ok();
+        String orderSn = seckillService.kill(killId, key, num);
+        model.addAttribute("orderSn", orderSn);
+        return "success";
     }
 }
