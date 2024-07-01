@@ -11,6 +11,7 @@ import java.math.BigDecimal;
  **/
 @Data
 public class SecKillSkuRedisTo {
+
     private Long id;
     /**
      * 活动id
@@ -36,11 +37,11 @@ public class SecKillSkuRedisTo {
     /**
      * 秒杀总量
      */
-    private BigDecimal seckillCount;
+    private Integer seckillCount;
     /**
      * 每人限购数量
      */
-    private BigDecimal seckillLimit;
+    private Integer seckillLimit;
     /**
      * 排序
      */
