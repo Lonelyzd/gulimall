@@ -24,7 +24,7 @@ pipeline {
   stages {
       stage('拉取代码') {
         steps {
-          git(url: 'git@github.com:Lonelyzd/gulimall.git', credentialsId: 'github-id', branch: 'master', changelog: true, poll: false)
+          git(url: 'https://github.com/Lonelyzd/gulimall.git', credentialsId: 'github-id', branch: 'master', changelog: true, poll: false)
           sh 'echo 正在构建 $PROJECT_NAME 版本号 $PROJECT_VERSIN '
         }
 
