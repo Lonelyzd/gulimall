@@ -29,7 +29,7 @@ pipeline {
 
           container ('maven') {
              sh 'echo 正在完整编译项目.... '
-             sh 'mvn clean install -Dmaven.test.skip=true'
+             sh 'mvn clean install -gs settings.xml -Dmaven.test.skip=true'
           }
         }
       }
