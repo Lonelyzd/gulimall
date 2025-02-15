@@ -26,8 +26,12 @@ pipeline {
         steps {
           git(url: 'https://github.com/Lonelyzd/gulimall.git', credentialsId: 'github-id', branch: 'master', changelog: true, poll: false)
           sh 'echo 正在构建 $PROJECT_NAME 版本号 $PROJECT_VERSIN '
-        }
 
+          container ('maven') {
+             sh 'echo 正在完整编译项目.... '
+             sh 'mvn clean install -Dmaven.test.skip=true'
+          }
+        }
       }
 
       stage('sonarqube代码质量分析') {
