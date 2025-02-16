@@ -60,7 +60,7 @@
             <id>repo1-central</id>
             <name>repo1</name>
             <url>http://repo1.maven.org/maven2</url>
-            <mirrorOf>central</mirrorOf>
+            <mirrorOf>*</mirrorOf>
         </mirror>
     </mirrors>
 </settings>
