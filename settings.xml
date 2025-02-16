@@ -46,6 +46,12 @@
     </profiles>
     <mirrors>
         <mirror>
+            <id>repo1-central</id>
+            <name>repo1</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <mirrorOf>*</mirrorOf>
+        </mirror>
+        <mirror>
             <id>nexus-aliyu</id>
             <name>Nexus aliyun</name>
             <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
@@ -54,12 +60,6 @@
         <mirror>
             <id>repo.jenkins-ci.org</id>
             <url>https://repo.jenkins-ci.org/public/</url>
-            <mirrorOf>*</mirrorOf>
-        </mirror>
-        <mirror>
-            <id>repo1-central</id>
-            <name>repo1</name>
-            <url>https://repo.maven.apache.org/maven2</url>
             <mirrorOf>*</mirrorOf>
         </mirror>
     </mirrors>
