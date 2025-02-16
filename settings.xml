@@ -49,7 +49,7 @@
             <id>nexus-aliyu</id>
             <name>Nexus aliyun</name>
             <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
-            <mirrorOf>central</mirrorOf>
+            <mirrorOf>*</mirrorOf>
         </mirror>
         <mirror>
             <id>repo.jenkins-ci.org</id>
