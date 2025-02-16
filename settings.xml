@@ -56,5 +56,11 @@
             <url>https://repo.jenkins-ci.org/public/</url>
             <mirrorOf>*</mirrorOf>
         </mirror>
+        <mirror>
+            <id>google-maven-central</id>
+            <name>Google Maven Central</name>
+            <url>https://maven-central.storage.googleapis.com/repos/central/data/</url>
+            <mirrorOf>central</mirrorOf>
+        </mirror>
     </mirrors>
 </settings>
