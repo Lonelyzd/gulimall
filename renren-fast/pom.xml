@@ -139,11 +139,11 @@
 			<version>${oracle.version}</version>
 		</dependency>-->
 		 <!--mssql驱动-->
-		<dependency>
+		<!--<dependency>
 			<groupId>com.microsoft.sqlserver</groupId>
 			<artifactId>sqljdbc4</artifactId>
 			<version>${mssql.version}</version>
-		</dependency>
+		</dependency>-->
 		 <!--postgresql驱动-->
 		<dependency>
 			<groupId>org.postgresql</groupId>
