@@ -46,6 +46,12 @@
     </profiles>
     <mirrors>
         <mirror>
+            <id>aliyunmaven</id>
+            <mirrorOf>*</mirrorOf>
+            <name>阿里云镜像</name>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </mirror>
+        <mirror>
             <id>repo1-central</id>
             <name>repo1</name>
             <url>https://repo.maven.apache.org/maven2</url>
