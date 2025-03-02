@@ -69,8 +69,8 @@ pipeline {
           branch 'master'
         }
         steps {
-          input(id: 'deploy-to-dev-$PROJECT_NAME', message: '是否将$PROJECT_NAME 部署到集群中?')
-          kubernetesDeploy(configs: '$PROJECT_NAME/deploy/**', enableConfigSubstitution: true, kubeconfigId: "$KUBECONFIG_CREDENTIAL_ID")
+          input(id: "deploy-to-dev-$PROJECT_NAME", message: "是否将$PROJECT_NAME 部署到集群中?")
+          kubernetesDeploy(configs: "$PROJECT_NAME/deploy/**", enableConfigSubstitution: true, kubeconfigId: "$KUBECONFIG_CREDENTIAL_ID")
         }
       }
 
