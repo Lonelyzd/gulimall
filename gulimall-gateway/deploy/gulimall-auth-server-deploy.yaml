@@ -55,7 +55,8 @@ spec:
       protocol: TCP
       port: 8333
       targetPort: 8858
-      nodePort: 20007
+      #端口必须在30000-32767范围内
+      nodePort: 31003
   selector:
     app: gulimall-gateway
   type: NodePort
