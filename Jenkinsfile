@@ -6,8 +6,8 @@ pipeline {
   }
 
   parameters {
-      string(name:'PROJECT_VERSIN',defaultValue: 'v0.0Beta',description:'项目版本号')
-      string(name:'PROJECT_NAME',defaultValue: '',description:'需要构建的项目')
+      string(name:'PROJECT_VERSIN',defaultValue: 'defaultVersin',description:'项目版本号')
+      string(name:'PROJECT_NAME',defaultValue: 'gulimall-gateway',description:'需要构建的项目')
   }
 
    environment {
