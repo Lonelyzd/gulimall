@@ -16,7 +16,7 @@ pipeline {
       KUBECONFIG_CREDENTIAL_ID = 'demo-kubeconfig'
       REGISTRY = 'registry.cn-hangzhou.aliyuncs.com'
       DOCKERHUB_NAMESPACE = 'ice-gulimall'
-      GITHUB_ACCOUNT = 'kubesphere'
+      GITHUB_ACCOUNT = 'Lonelyzd'
       APP_NAME = 'devops-java-sample'
       SONAR_CREDENTIAL_ID = 'sonar-token'
   }
