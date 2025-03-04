@@ -68,7 +68,7 @@ pipeline {
             container ('maven') {
               input(id: 'release-image-with-tag', message: '发布当前版本镜像吗?')
                 withCredentials([usernamePassword(credentialsId: "$GITHUB_CREDENTIAL_ID", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                  sh 'git config --global user.email "iceblue.top@foxmail.com" '
+                  sh 'git config --global user.email "1156607853@qq.com" '
                   sh 'git config --global user.name "Lonelyzd" '
                   sh 'git tag -a $PROJECT_NAME_$PROJECT_VERSIN -m "$PROJECT_NAME_$PROJECT_VERSIN" '
 
