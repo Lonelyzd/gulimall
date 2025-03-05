@@ -72,7 +72,7 @@ pipeline {
                   sh 'git config --global user.name "Lonelyzd" '
                   sh 'echo tag: $PROJECT_NAME 版本号 $PROJECT_VERSIN '
                   sh 'git tag -a $PROJECT_NAME-$PROJECT_VERSIN -m "$PROJECT_NAME-$PROJECT_VERSIN" '
-                  sh 'git push https://$GIT_PASSWORD@github.com/@GITHUB_ACCOUNT/gulimall.git --tags --ipv4'
+                  sh 'git push https://$GIT_PASSWORD@github.com/$GITHUB_ACCOUNT/gulimall.git --tags --ipv4'
                 }
               sh 'docker tag  $REGISTRY/$DOCKERHUB_NAMESPACE/$PROJECT_NAME:SNAPSHOT-$BRANCH_NAME-$BUILD_NUMBER $REGISTRY/$DOCKERHUB_NAMESPACE/$PROJECT_NAME:$PROJECT_VERSIN '
               sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/$PROJECT_NAME:$PROJECT_VERSIN '
