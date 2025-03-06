@@ -13,10 +13,12 @@ pipeline {
    environment {
       DOCKER_CREDENTIAL_ID = 'aliyun-hub-id'
       GITHUB_CREDENTIAL_ID = 'github-id'
+      GITEE_CREDENTIAL_ID = 'gitee-id'
       KUBECONFIG_CREDENTIAL_ID = 'demo-kubeconfig'
       REGISTRY = 'registry.cn-hangzhou.aliyuncs.com'
       DOCKERHUB_NAMESPACE = 'ice-gulimall'
       GITHUB_ACCOUNT = 'Lonelyzd'
+      GITEE_ACCOUNT = 'BingLanShaoZi'
       APP_NAME = 'devops-java-sample'
       SONAR_CREDENTIAL_ID = 'sonar-token'
   }
@@ -24,7 +26,7 @@ pipeline {
   stages {
       stage('拉取代码') {
         steps {
-          git(url: 'https://github.com/Lonelyzd/gulimall.git', credentialsId: 'github-id', branch: 'master', changelog: true, poll: false)
+          git(url: 'https://gitee.com/BingLanShaoZi/gulimall.git', credentialsId: 'gitee-id', branch: 'master', changelog: true, poll: false)
           sh 'echo 正在构建 $PROJECT_NAME 版本号 $PROJECT_VERSIN '
 
           container ('maven') {
@@ -67,14 +69,12 @@ pipeline {
         steps {
             container ('maven') {
               input(id: 'release-image-with-tag', message: '发布当前版本镜像吗?')
-                withCredentials([usernamePassword(credentialsId: "$GITHUB_CREDENTIAL_ID", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                withCredentials([usernamePassword(credentialsId: "$GITEE_CREDENTIAL_ID", passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                   sh 'git config --global user.email "iceblue.top@foxmail.com" '
                   sh 'git config --global user.name "Lonelyzd" '
-                  sh 'git config --global --unset http.proxy'
-                  sh 'git config --global --unset https.proxy'
                   sh 'echo tag: $PROJECT_NAME 版本号 $PROJECT_VERSIN '
                   sh 'git tag -a $PROJECT_NAME-$PROJECT_VERSIN -m "$PROJECT_NAME-$PROJECT_VERSIN" '
-                  sh 'git push https://$GIT_PASSWORD@github.com/$GITHUB_ACCOUNT/gulimall.git --tags --ipv4'
+                  sh 'git push http://$GIT_USERNAME:$GIT_PASSWORD@gitee.com/$GITEE_ACCOUNT/gulimall.git --tags --ipv4'
                 }
               sh 'docker tag  $REGISTRY/$DOCKERHUB_NAMESPACE/$PROJECT_NAME:SNAPSHOT-$BRANCH_NAME-$BUILD_NUMBER $REGISTRY/$DOCKERHUB_NAMESPACE/$PROJECT_NAME:$PROJECT_VERSIN '
               sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/$PROJECT_NAME:$PROJECT_VERSIN '
