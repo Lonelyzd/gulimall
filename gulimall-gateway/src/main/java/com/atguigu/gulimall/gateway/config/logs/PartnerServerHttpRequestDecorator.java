@@ -17,6 +17,8 @@ public class PartnerServerHttpRequestDecorator extends ServerHttpRequestDecorato
 
     public PartnerServerHttpRequestDecorator(ServerHttpRequest delegate) {
         super(delegate);
+        log.info("请求路径：{}\n请求参数：{}", delegate.getPath(),delegate.getQueryParams());
+
         Flux<DataBuffer> flux = super.getBody();
         if (ParamsUtils.CHAIN_MEDIA_TYPE.contains(delegate.getHeaders().getContentType())) {
             Mono<DataBuffer> mono = DataBufferUtils.join(flux);
