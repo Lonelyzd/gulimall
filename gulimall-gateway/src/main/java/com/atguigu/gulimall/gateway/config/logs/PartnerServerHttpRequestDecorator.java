@@ -3,6 +3,7 @@ package com.atguigu.gulimall.gateway.config.logs;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import reactor.core.publisher.Flux;
@@ -17,7 +18,14 @@ public class PartnerServerHttpRequestDecorator extends ServerHttpRequestDecorato
 
     public PartnerServerHttpRequestDecorator(ServerHttpRequest delegate) {
         super(delegate);
-        log.info("请求路径：{}\n请求参数：{}", delegate.getPath(),delegate.getQueryParams());
+        log.info("请求路径：{}\n请求参数：{}", delegate.getPath(), delegate.getQueryParams());
+
+
+        HttpHeaders headers = delegate.getHeaders();
+        headers.forEach((key, values) -> {
+            log.info("请求头：{};请求头内容：{}", key, String.join(", ", values));
+        });
+
 
         Flux<DataBuffer> flux = super.getBody();
         if (ParamsUtils.CHAIN_MEDIA_TYPE.contains(delegate.getHeaders().getContentType())) {

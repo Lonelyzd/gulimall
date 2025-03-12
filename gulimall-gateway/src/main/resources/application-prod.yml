@@ -1,7 +1,9 @@
 spring:
   application:
     name: gulimall-gateway
+  cloud:
     gateway:
+      log-switch: true
       routes:
         - id: gulimall-product  #商品服务
           uri: lb://gulimall-product # 路由给gulimall-product，lb代表负载均衡
