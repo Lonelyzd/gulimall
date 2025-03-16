@@ -1,6 +1,7 @@
 spring:
   application:
     name: gulimall-gateway
+  cloud:
     gateway:
       routes:
         - id: gulimall-product  #商品服务
